@@ -94,7 +94,7 @@ const BookingPage = () => {
             'service_xxxxx',     // 1. اذهبي إلى Email Services وانسخي Service ID من هناك
             'template_sh4ienl',  // 2. هذا هو الـ ID الظاهر في صورتك
             templateParams,
-            'xxxxxxxxxxxx'       // 3. اذهبي إلى Account وانسخي Public Key (وليس Private)
+            'ELWHlKKgEaqg3GZzD'       // 3. اذهبي إلى Account وانسخي Public Key (وليس Private)
         )
         .then((response) => {
              console.log('✅ نجاح! تم الإرسال', response.status, response.text);
