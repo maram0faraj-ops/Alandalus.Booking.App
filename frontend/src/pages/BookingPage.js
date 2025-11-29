@@ -7,8 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import 'moment/locale/ar-sa'; 
 import '../custom.css'; 
-
-// 1. استيراد مكتبة EmailJS (تأكدي أنك قمتِ بتثبيتها npm install @emailjs/browser)
+// 1. استيراد مكتبة EmailJS
 import emailjs from '@emailjs/browser'; 
 
 moment.locale('ar-sa'); 
@@ -16,15 +15,21 @@ moment.locale('ar-sa');
 const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
 
 const facilities = ['المسرح', 'مصادر التعلم', 'قاعة بلنسية', 'الصالة الرياضية بنات', 'الصالة الرياضية بنين'];
-// ... (باقي المصفوفات كما هي: sections, stages, bookingTypes) ...
 const sections = ['بنين', 'بنات'];
-const stages = ['رياض الأطفال', 'طفولة مبكرة', 'ابتدائي', 'متوسط', 'ثانوي', 'إشراف تعليمي', 'إدارة عامة'];
+const stages = [
+    'رياض الأطفال', 
+    'طفولة مبكرة', 
+    'ابتدائي', 
+    'متوسط', 
+    'ثانوي', 
+    'إشراف تعليمي', 
+    'إدارة عامة'
+];
 const bookingTypes = ['داخلي', 'خارجي'];
 
 const BookingPage = () => {
     const navigate = useNavigate();
 
-    // ... (نفس دوال الوقت والتاريخ getNextDays و availableDates) ...
     const getNextDays = () => {
         const days = [];
         for (let i = 0; i < 14; i++) { 
@@ -37,6 +42,7 @@ const BookingPage = () => {
         }
         return days;
     };
+
     const availableDates = getNextDays();
 
     const [formData, setFormData] = useState({
@@ -59,7 +65,6 @@ const BookingPage = () => {
     const [error, setError] = useState('');
     const [dayOfWeek, setDayOfWeek] = useState(availableDates[0].dayName);
 
-    // ... (useEffect و handleChange كما هي) ...
     useEffect(() => {
         const selected = availableDates.find(d => d.value === formData.datePart);
         if (selected) {
@@ -72,28 +77,36 @@ const BookingPage = () => {
         setFormData({ ...formData, [name]: value });
     };
 
-    // 2. دالة إرسال الإيميل عبر EmailJS
+    // ---------------------------------------------------------
+    // 2. دالة إرسال الإيميل (EmailJS Function)
+    // ---------------------------------------------------------
     const sendEmailNotification = (bookingData, bookingId) => {
+        
+        // تجهيز البيانات لملء القالب
         const templateParams = {
-            to_name: "عميلنا العزيز", // أو يمكن ربطه باسم المستخدم إن وجد
-            facility_name: bookingData.facility,
-            booking_date: `${bookingData.datePart} - الساعة ${bookingData.timePart}`,
-            to_email: bookingData.contactEmail, // الإيميل الذي أدخله المستخدم
-            booking_id: bookingId
+            to_name: "عميلنا العزيز", 
+            facility_name: bookingData.facility, // اسم المرفق
+            booking_date: `${bookingData.datePart} - الساعة ${bookingData.timePart}`, // التاريخ والوقت
+            // ✅ تصحيح: استخدام اسم المتغير "email" ليطابق إعداداتك في الصورة
+            email: bookingData.contactEmail, 
+            booking_id: bookingId // رقم الحجز
         };
 
         emailjs.send(
-            'YOUR_SERVICE_ID',   // ضعي Service ID الخاص بك هنا
-            'YOUR_TEMPLATE_ID',  // ضعي Template ID الخاص بك هنا
+            'YOUR_SERVICE_ID',   // ⚠️ ضعي هنا Service ID (مثال: service_x9s...)
+            'YOUR_TEMPLATE_ID',  // ⚠️ ضعي هنا Template ID (مثال: template_a3f...)
             templateParams,
-            'YOUR_PUBLIC_KEY'    // ضعي Public Key الخاص بك هنا
+            'YOUR_PUBLIC_KEY'    // ⚠️ ضعي هنا Public Key (مثال: 8nJ3_kL...)
         )
         .then((response) => {
-             console.log('SUCCESS!', response.status, response.text);
+             console.log('✅ تم إرسال الإيميل بنجاح!', response.status, response.text);
         }, (err) => {
-             console.log('FAILED...', err);
+             console.log('❌ فشل إرسال الإيميل...', err);
+             // يمكنك إظهار تنبيه هنا إذا أردت
+             // alert("حدث خطأ في إرسال الإيميل، لكن الحجز تم بنجاح");
         });
     };
+    // ---------------------------------------------------------
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -116,7 +129,6 @@ const BookingPage = () => {
             }
 
             const payload = {
-                // ... (نفس البيانات المرسلة للباك اند) ...
                 facility: formData.facility,
                 bookingType: formData.bookingType,
                 date: fullDate, 
@@ -138,10 +150,10 @@ const BookingPage = () => {
                 },
             });
 
-            // 3. تم الحجز في السيرفر بنجاح، الآن نرسل الإيميل من المتصفح مباشرة
+            // ✅ نجاح الحجز
             setMessage(`تم الحجز بنجاح! رقم الحجز: ${res.data.booking._id}.`);
             
-            // استدعاء دالة الإرسال
+            // 3. استدعاء دالة إرسال الإيميل هنا بعد نجاح الحفظ
             sendEmailNotification(formData, res.data.booking._id);
 
             setError('');
@@ -151,7 +163,6 @@ const BookingPage = () => {
             }, 3000);
 
         } catch (err) {
-            // ... (معالجة الأخطاء كما هي) ...
             console.error('Booking error:', err.response);
             const serverMsg = err.response?.data?.message;
             if (serverMsg) {
@@ -166,14 +177,13 @@ const BookingPage = () => {
     };
 
     const isExternal = formData.bookingType === 'خارجي';
+
     const inputStyle = { backgroundColor: '#f1f3f5', border: 'none', padding: '10px', borderRadius: '5px' };
     const labelStyle = { fontWeight: 'bold', color: 'var(--navy-blue)', fontSize: '0.9rem', marginBottom: '5px' };
 
     return (
-        // ... (نفس كود الـ JSX الخاص بالواجهة تماماً بدون تغيير) ...
         <Container className="mt-4 mb-5">
-             {/* ... المحتوى ... */}
-             <Card className="shadow-lg p-4 border-0" style={{ borderRadius: '15px' }}>
+            <Card className="shadow-lg p-4 border-0" style={{ borderRadius: '15px' }}>
                 <div className="text-center mb-4">
                     <h2 className="fw-bold text-primary">نموذج حجز قاعة جديدة</h2>
                     <p className="text-muted">يرجى تعبئة البيانات بدقة لضمان اعتماد الحجز</p>
@@ -183,23 +193,19 @@ const BookingPage = () => {
                 {error && <Alert variant="danger">{error}</Alert>}
 
                 <Form onSubmit={handleSubmit}>
-                     {/* ... باقي الفورم كما هو في ملفك الأصلي ... */}
-                     <Row className="g-3">
-                        {/* ... الأعمدة والحقول ... */}
-                        {/* فقط تأكدي من نسخ محتوى الـ JSX بالكامل من ملفك الأصلي ولصقه هنا */}
-                        {/* قمت باختصاره هنا لعدم الإطالة لأن التغيير فقط في المنطق (Logic) */}
+                    <Row className="g-3">
+                        {/* العمود الأيمن */}
                         <Col md={6}>
-                            {/* ... */}
                             <Card className="p-3 border-0 bg-light h-100">
                                 <h5 className="text-pink fw-bold mb-3">بيانات القاعة والتوقيت</h5>
+                                
                                 <Form.Group className="mb-3" controlId="facility">
                                     <Form.Label style={labelStyle}>القاعة / المرفق</Form.Label>
                                     <Form.Select name="facility" value={formData.facility} onChange={handleChange} style={inputStyle}>
                                         {facilities.map(f => <option key={f} value={f}>{f}</option>)}
                                     </Form.Select>
                                 </Form.Group>
-                                {/* ... باقي الحقول ... */}
-                                {/* تأكدي من نقل جميع الحقول (datePart, timePart, section, etc..) */}
+                                
                                 <Row>
                                     <Col>
                                         <Form.Group className="mb-3" controlId="datePart">
@@ -218,40 +224,57 @@ const BookingPage = () => {
                                         </Form.Group>
                                     </Col>
                                 </Row>
-                                {/* ... وهكذا لباقي الملف ... */}
+
+                                <Form.Group className="mb-3">
+                                    <Form.Label style={{...labelStyle, color: '#6c757d'}}>اليوم المحدد</Form.Label>
+                                    <Form.Control type="text" value={dayOfWeek} disabled style={{...inputStyle, backgroundColor: '#e9ecef'}} />
+                                </Form.Group>
+
+                                <Form.Group className="mb-3" controlId="section">
+                                    <Form.Label style={labelStyle}>القسم</Form.Label>
+                                    <Form.Select name="section" value={formData.section} onChange={handleChange} style={inputStyle}>
+                                        {sections.map(s => <option key={s} value={s}>{s}</option>)}
+                                    </Form.Select>
+                                </Form.Group>
                             </Card>
                         </Col>
-                        
+
+                        {/* العمود الأيسر */}
                         <Col md={6}>
-                             {/* ... العمود الثاني ... */}
-                             <Card className="p-3 border-0 bg-light h-100">
-                                {/* ... الحقول ... */}
+                            <Card className="p-3 border-0 bg-light h-100">
+                                <h5 className="text-pink fw-bold mb-3">تفاصيل النشاط والتواصل</h5>
+
                                 <Form.Group className="mb-3" controlId="activityName">
                                     <Form.Label style={labelStyle}>اسم الفعالية/النشاط</Form.Label>
                                     <Form.Control type="text" name="activityName" value={formData.activityName} onChange={handleChange} required placeholder="مثال: حفل تخرج" style={inputStyle} />
                                 </Form.Group>
+
                                 <Form.Group className="mb-3" controlId="duration">
                                     <Form.Label style={labelStyle}>المدة (بالساعات)</Form.Label>
                                     <Form.Control type="number" name="duration" value={formData.duration} onChange={handleChange} min="1" max="12" step="0.5" required style={inputStyle} />
                                 </Form.Group>
+
                                 <Form.Group className="mb-3" controlId="stage">
                                     <Form.Label style={labelStyle}>المرحلة</Form.Label>
                                     <Form.Select name="stage" value={formData.stage} onChange={handleChange} style={inputStyle}>
                                         {stages.map(s => <option key={s} value={s}>{s}</option>)}
                                     </Form.Select>
                                 </Form.Group>
+
                                 <Form.Group className="mb-3" controlId="bookingType">
                                     <Form.Label style={labelStyle}>نوع الحجز</Form.Label>
                                     <Form.Select name="bookingType" value={formData.bookingType} onChange={handleChange} style={inputStyle}>
                                         {bookingTypes.map(t => <option key={t} value={t}>{t}</option>)}
                                     </Form.Select>
                                 </Form.Group>
+
                                 {isExternal && (
                                     <Form.Group className="mb-3" controlId="externalEntityName">
                                         <Form.Label style={labelStyle}>اسم الجهة الخارجية</Form.Label>
                                         <Form.Control type="text" name="externalEntityName" value={formData.externalEntityName} onChange={handleChange} required style={inputStyle} />
                                     </Form.Group>
                                 )}
+
                                 <Row>
                                     <Col>
                                         <Form.Group className="mb-3" controlId="chairsNeeded">
@@ -266,11 +289,12 @@ const BookingPage = () => {
                                         </Form.Group>
                                     </Col>
                                 </Row>
-                             </Card>
+                            </Card>
                         </Col>
-                     </Row>
+                    </Row>
 
-                     <div className="mt-4 p-3 rounded" style={{ backgroundColor: 'rgba(0, 31, 63, 0.05)' }}>
+                    {/* قسم التواصل */}
+                    <div className="mt-4 p-3 rounded" style={{ backgroundColor: 'rgba(0, 31, 63, 0.05)' }}>
                         <h5 className="text-primary fw-bold mb-3">بيانات التواصل (لتأكيد الحجز)</h5>
                         <Row>
                             <Col md={6}>
