@@ -55,9 +55,8 @@ const BookingPage = () => {
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [dayOfWeek, setDayOfWeek] = useState(availableDates[0].dayName);
-    
-    // متغير لتخزين رابط الواتساب في حال حظره المتصفح
     const [whatsappLink, setWhatsappLink] = useState('');
+    const [showSuccess, setShowSuccess] = useState(false);
 
     useEffect(() => {
         const selected = availableDates.find(d => d.value === formData.datePart);
@@ -85,19 +84,31 @@ const BookingPage = () => {
             'service_fy2kk0l',    // Service ID
             'template_sh4ienl',   // Template ID
             templateParams,
-            'ELWHlKKgEaqg3GZzD'   // Public Key
-        ).then((res) => console.log('Email sent')).catch((err) => console.error('Email failed', err));
+            'ELWHlKKgEaqg3GZzD'   // Public Key (الحرف الصغير L)
+        )
+        .then(() => {
+             console.log('✅ تم إرسال الإيميل بنجاح');
+             // alert("تم إرسال الإيميل بنجاح إلى بريدك"); // يمكنك تفعيل هذا للتأكد
+        })
+        .catch((err) => {
+             console.error('❌ فشل إرسال الإيميل', err);
+             alert("تنبيه: تم الحجز ولكن فشل إرسال الإيميل. تأكد من صحة البريد.");
+        });
     };
 
-    // --- 2. دالة فتح الواتساب تلقائياً (للمستخدم نفسه) ---
-    const openWhatsAppToSelf = (bookingData, bookingId) => {
-        // تنظيف رقم الجوال (حذف الصفر من البداية وإضافة 966)
-        let phone = bookingData.contactPhone.trim();
-        if (phone.startsWith('0')) {
-            phone = phone.substring(1);
-        }
-        if (!phone.startsWith('966')) {
+    // --- 2. دالة فتح الواتساب ---
+    const openWhatsApp = (bookingData, bookingId) => {
+        // تنظيف رقم الجوال من أي رموز غير رقمية
+        let phone = bookingData.contactPhone.replace(/[^0-9]/g, '');
+        
+        // معالجة صيغ الرقم السعودي
+        if (phone.startsWith('05')) {
+            phone = '966' + phone.substring(1); // تحويل 05xxxx إلى 9665xxxx
+        } else if (phone.startsWith('5')) {
             phone = '966' + phone;
+        } else if (!phone.startsWith('966')) {
+            // إذا لم يبدأ بـ 966 ولم يكن 05، نفترض أنه 966 ونضيفها احتياطاً
+             phone = '966' + phone;
         }
 
         const text = `
@@ -109,67 +120,80 @@ const BookingPage = () => {
 الوقت: ${bookingData.timePart}
 النشاط: ${bookingData.activityName}
 ---------------------------
-(هذه الرسالة للتوثيق الشخصي)
+(رسالة تلقائية للتوثيق)
         `.trim();
 
         const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
-        
+        setWhatsappLink(url);
+
         // محاولة الفتح التلقائي
         const win = window.open(url, '_blank');
         
-        // إذا قام المتصفح بمنع النافذة، نحفظ الرابط ليضغط عليه المستخدم يدوياً
         if (!win || win.closed || typeof win.closed == 'undefined') {
-            setWhatsappLink(url); 
+            // إذا فشل الفتح التلقائي (بسبب مانع الإعلانات)، نظهر الزر
+            return false;
         }
+        return true;
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
         setMessage('');
         setError('');
-        setWhatsappLink('');
+        setShowSuccess(false);
 
         const token = localStorage.getItem('token');
         if (!token) {
-            setError('الرجاء تسجيل الدخول أولاً لإجراء الحجز.');
+            alert('عفواً، انتهت جلستك. يرجى تسجيل الدخول مرة أخرى.');
             return;
         }
+
+        // تنبيه مبدئي للتأكد أن الزر يعمل
+        // alert("جاري إرسال الطلب للسيرفر..."); 
 
         try {
             const dateTimeString = `${formData.datePart}T${formData.timePart}`;
             const fullDate = new Date(dateTimeString);
 
             if (isNaN(fullDate.getTime())) {
-                setError("تنسيق التاريخ أو الوقت غير صالح.");
+                alert("تنسيق التاريخ غير صحيح");
                 return;
             }
 
             const payload = { ...formData, date: fullDate };
 
+            // 1. إرسال للسيرفر
             const res = await axios.post(`${API_URL}/bookings`, payload, {
                 headers: { 'x-auth-token': token, 'Content-Type': 'application/json' },
             });
 
-            // 1. إرسال الإيميل
-            sendEmailNotification(formData, res.data.booking._id);
+            // إذا وصلنا هنا، يعني الحجز نجح
+            const bookingId = res.data.booking._id;
+            // alert(`تم الحجز بنجاح! رقم الحجز: ${bookingId}`);
 
-            // 2. فتح الواتساب تلقائياً للمستخدم
-            openWhatsAppToSelf(formData, res.data.booking._id);
+            setShowSuccess(true); // إظهار رسالة النجاح الخضراء
 
-            // 3. إظهار رسالة النجاح
-            setMessage(`تم الحجز بنجاح! رقم الحجز: ${res.data.booking._id}.`);
-            
-            // التأخير قبل العودة للصفحة الرئيسية (لنعطيه وقتاً لإرسال الرسالة)
+            // 2. إرسال الإيميل
+            sendEmailNotification(formData, bookingId);
+
+            // 3. فتح الواتساب
             setTimeout(() => {
-                // لن نقوم بالانتقال فوراً إذا كان هناك رابط واتساب عالق
-                // navigate('/'); 
-            }, 5000);
+                const opened = openWhatsApp(formData, bookingId);
+                if (!opened) {
+                    alert("تم الحجز ✅\n\nلكن المتصفح منع فتح الواتساب تلقائياً.\nالرجاء الضغط على الزر الأخضر الظاهر في الشاشة لإرسال الرسالة.");
+                }
+            }, 1000);
+
+            // تفريغ النموذج (اختياري)
+            // setFormData({ ...formData, activityName: '', contactPhone: '', contactEmail: '' });
 
         } catch (err) {
             console.error('Booking error:', err.response);
-            const serverMsg = err.response?.data?.message;
-            if (serverMsg) setError(`فشل الحجز: ${serverMsg}`);
-            else setError('فشل الاتصال بالخادم.');
+            const serverMsg = err.response?.data?.message || 'فشل الاتصال بالخادم';
+            
+            // إظهار الخطأ بوضوح
+            alert(`❌ فشل الحجز!\nالسبب: ${serverMsg}`);
+            setError(serverMsg);
         }
     };
 
@@ -185,27 +209,37 @@ const BookingPage = () => {
                     <p className="text-muted">يرجى تعبئة البيانات بدقة لضمان اعتماد الحجز</p>
                 </div>
                 
-                {message && (
-                    <Alert variant="success">
-                        <h5 className="fw-bold">{message}</h5>
+                {/* رسالة نجاح كبيرة وواضحة */}
+                {showSuccess && (
+                    <Alert variant="success" className="text-center p-4">
+                        <h4 className="fw-bold">✅ تم الحجز بنجاح!</h4>
                         <p>تم إرسال تفاصيل الحجز إلى بريدك الإلكتروني.</p>
+                        
+                        {whatsappLink && (
+                            <div className="mt-3">
+                                <p className="mb-2 fw-bold text-dark">هل لم يفتح الواتساب تلقائياً؟ اضغط هنا:</p>
+                                <a 
+                                    href={whatsappLink} 
+                                    target="_blank" 
+                                    rel="noreferrer" 
+                                    className="btn btn-success fw-bold px-4 py-2"
+                                    style={{ fontSize: '1.1rem' }}
+                                >
+                                    📱 فتح الواتساب وتأكيد الحجز
+                                </a>
+                            </div>
+                        )}
                         <hr />
-                        <p className="mb-0">
-                            جاري فتح الواتساب لتوثيق الحجز... 
-                            {whatsappLink && (
-                                <div className="mt-2">
-                                    <span className="text-danger fw-bold">⚠️ متصفحك منع الفتح التلقائي للواتساب. </span>
-                                    <a href={whatsappLink} target="_blank" rel="noreferrer" className="btn btn-success btn-sm fw-bold">
-                                        اضغط هنا لفتح الواتساب يدوياً
-                                    </a>
-                                </div>
-                            )}
-                        </p>
+                        <Button variant="outline-success" size="sm" onClick={() => navigate('/')}>
+                            العودة للصفحة الرئيسية
+                        </Button>
                     </Alert>
                 )}
 
                 {error && <Alert variant="danger">{error}</Alert>}
 
+                {/* إخفاء النموذج عند النجاح لمنع التكرار */}
+                {!showSuccess && (
                 <Form onSubmit={handleSubmit}>
                     <Row className="g-3">
                         <Col md={6}>
@@ -317,6 +351,7 @@ const BookingPage = () => {
                         </Button>
                     </div>
                 </Form>
+                )}
             </Card>
         </Container>
     );
