@@ -67,7 +67,7 @@ exports.createBooking = async (req, res) => {
         const booking = await newBooking.save();
         
         // --- إرسال الإشعارات ---
-        (async () => {
+        /*(async () => {
             try {
                 const user = await User.findById(bookedBy);
                 const recipientName = user ? user.username : "المستخدم";
@@ -77,7 +77,7 @@ exports.createBooking = async (req, res) => {
             } catch (notifyError) {
                 console.error('⚠️ Notification Warning:', notifyError.message);
             }
-        })();
+        })(); */
 
         res.status(201).json({ 
             message: 'تم الحجز بنجاح.',
