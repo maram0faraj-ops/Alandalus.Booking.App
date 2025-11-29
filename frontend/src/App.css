@@ -1,0 +1,42 @@
+/* استيراد الخط من جوجل مباشرة داخل CSS */
+@import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Cairo', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  
+  /* إعدادات الاتجاه للعربية */
+  direction: rtl;
+  text-align: right;
+  background-color: #f8f9fa; /* لون خلفية مريح للعين */
+}
+
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
+}
+
+/* تعديل اتجاهات البوتستراب لتتوافق مع العربية */
+.card-header, .card-footer, .alert {
+    text-align: right;
+}
+
+/* تحسين حقول الإدخال */
+input, select, textarea, button {
+    font-family: 'Cairo', sans-serif !important;
+}
+
+/* تحسين شكل الجدول */
+.table th, .table td {
+    vertical-align: middle;
+}
+
+/* إصلاح اتجاه أيقونات أو نصوص قد تنعكس خطأً */
+.ltr {
+    direction: ltr;
+    text-align: left;
+}
