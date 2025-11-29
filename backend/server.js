@@ -4,27 +4,40 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
-// ✅ 1. تفعيل هذا السطر (إزالة // من البداية)
 const authRoutes = require('./routes/authRoutes');
-
 const bookingRoutes = require('./routes/bookingRoutes');
 const reportRoutes = require('./routes/reportRoutes'); 
 const app = express();
 
+// ----------------------------------------------------
+// Middleware
+// ----------------------------------------------------
 app.use(express.json()); 
 
-const allowedOrigins = ['http://localhost:3000', 'https://your-frontend-app.vercel.app']; 
+// ✅ تحديث قائمة الروابط المسموح لها بالاتصال (CORS)
+const allowedOrigins = [
+    'http://localhost:3000',                      // للسماح بالعمل على جهازك
+    'https://alandalus-booking-app.vercel.app',   // ✅ رابط موقعك الحقيقي على Vercel (بدون شرطة في الآخر)
+    'https://alandalus-booking-app.vercel.app/'   // احتياطاً مع الشرطة
+];
+
 app.use(cors({
     origin: function (origin, callback) {
-        if (!origin) return callback(null, true); 
+        // السماح للطلبات التي ليس لها مصدر (مثل تطبيقات الجوال أو Postman)
+        if (!origin) return callback(null, true);
+        
         if (allowedOrigins.indexOf(origin) === -1) {
-            const msg = 'سياسة CORS لا تسمح بهذا الأصل.';
+            const msg = 'سياسة CORS لا تسمح لهذا الموقع بالاتصال بالسيرفر.';
             return callback(new Error(msg), false);
         }
         return callback(null, true);
-    }
+    },
+    credentials: true // مهم إذا كنت تستخدم الكوكيز أو التوثيق
 }));
 
+// ----------------------------------------------------
+// الاتصال بقاعدة البيانات
+// ----------------------------------------------------
 const PORT = process.env.PORT || 5000;
 const MONGODB_URI = "mongodb+srv://maram0faraj:NewPass2050@cluster0.xpf2rmx.mongodb.net/?appName=Cluster0";
 
@@ -40,12 +53,14 @@ mongoose.connect(MONGODB_URI)
         process.exit(1); 
     });
 
+// ----------------------------------------------------
+// المسارات (Routes)
+// ----------------------------------------------------
+
 app.get('/', (req, res) => {
     res.json({ message: 'Andalus Booking API is running successfully!' });
 });
 
-// ✅ 2. تفعيل هذا السطر أيضاً (إزالة // من البداية)
 app.use('/api/auth', authRoutes); 
-
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/reports', reportRoutes);
