@@ -80,7 +80,7 @@ const BookingPage = () => {
     // ---------------------------------------------------------
     // 2. دالة إرسال الإيميل (EmailJS Function)
     // ---------------------------------------------------------
-    const sendEmailNotification = (bookingData, bookingId) => {
+   const sendEmailNotification = (bookingData, bookingId) => {
         const templateParams = {
             to_name: "مدير النظام", 
             facility_name: bookingData.facility,
@@ -89,19 +89,18 @@ const BookingPage = () => {
             booking_id: bookingId 
         };
 
-        // ⚠️ انتبهي هنا: يجب وضع القيم الحقيقية بين علامات التنصيص
         emailjs.send(
-            'service_xxxxx',     // 1. اذهبي إلى Email Services وانسخي Service ID من هناك
-            'template_sh4ienl',  // 2. هذا هو الـ ID الظاهر في صورتك
+            'service_fy2kk0l',  // ⚠️<< ضعي الكود الذي نسختيه هنا بدلاً من service_xxxxx
+            'template_sh4ienl',          // هذا صحيح (من الصورة السابقة)
             templateParams,
-            'ELWHlKKgEaqg3GZzD'       // 3. اذهبي إلى Account وانسخي Public Key (وليس Private)
+            'ELWHlKKgEaqg3GZzD'          // هذا صحيح (من الكود الذي أرسلتيه)
         )
         .then((response) => {
              console.log('✅ نجاح! تم الإرسال', response.status, response.text);
-             alert('تم إرسال الإيميل بنجاح!');
+             // alert('تم إرسال الإيميل بنجاح!'); // يمكنك تفعيل هذا للتأكد
         }, (err) => {
              console.log('❌ فشل الإرسال', err);
-             alert('فشل الإرسال: تأكدي من الكونسول');
+             alert('فشل إرسال الإيميل: راجع الـ Console');
         });
     };
     // ---------------------------------------------------------
