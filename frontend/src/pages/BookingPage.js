@@ -81,29 +81,27 @@ const BookingPage = () => {
     // 2. دالة إرسال الإيميل (EmailJS Function)
     // ---------------------------------------------------------
     const sendEmailNotification = (bookingData, bookingId) => {
-        
-        // تجهيز البيانات لملء القالب
         const templateParams = {
-            to_name: "عميلنا العزيز", 
-            facility_name: bookingData.facility, // اسم المرفق
-            booking_date: `${bookingData.datePart} - الساعة ${bookingData.timePart}`, // التاريخ والوقت
-            // ✅ تصحيح: استخدام اسم المتغير "email" ليطابق إعداداتك في الصورة
+            to_name: "مدير النظام", 
+            facility_name: bookingData.facility,
+            booking_date: `${bookingData.datePart} - الساعة ${bookingData.timePart}`,
             email: bookingData.contactEmail, 
-            booking_id: bookingId // رقم الحجز
+            booking_id: bookingId 
         };
 
+        // ⚠️ انتبهي هنا: يجب وضع القيم الحقيقية بين علامات التنصيص
         emailjs.send(
-            'YOUR_SERVICE_ID',   // ⚠️ ضعي هنا Service ID (مثال: service_x9s...)
-            'YOUR_TEMPLATE_ID',  // ⚠️ ضعي هنا Template ID (مثال: template_a3f...)
+            'service_xxxxx',     // 1. اذهبي إلى Email Services وانسخي Service ID من هناك
+            'template_sh4ienl',  // 2. هذا هو الـ ID الظاهر في صورتك
             templateParams,
-            'YOUR_PUBLIC_KEY'    // ⚠️ ضعي هنا Public Key (مثال: 8nJ3_kL...)
+            'xxxxxxxxxxxx'       // 3. اذهبي إلى Account وانسخي Public Key (وليس Private)
         )
         .then((response) => {
-             console.log('✅ تم إرسال الإيميل بنجاح!', response.status, response.text);
+             console.log('✅ نجاح! تم الإرسال', response.status, response.text);
+             alert('تم إرسال الإيميل بنجاح!');
         }, (err) => {
-             console.log('❌ فشل إرسال الإيميل...', err);
-             // يمكنك إظهار تنبيه هنا إذا أردت
-             // alert("حدث خطأ في إرسال الإيميل، لكن الحجز تم بنجاح");
+             console.log('❌ فشل الإرسال', err);
+             alert('فشل الإرسال: تأكدي من الكونسول');
         });
     };
     // ---------------------------------------------------------
