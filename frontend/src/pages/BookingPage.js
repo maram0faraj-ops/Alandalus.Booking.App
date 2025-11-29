@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
 import 'moment/locale/ar-sa'; 
 import '../custom.css'; 
-// 1. استيراد مكتبة EmailJS
 import emailjs from '@emailjs/browser'; 
 
 moment.locale('ar-sa'); 
@@ -78,9 +77,9 @@ const BookingPage = () => {
     };
 
     // ---------------------------------------------------------
-    // 2. دالة إرسال الإيميل (EmailJS Function)
+    // دالة إرسال الإيميل (EmailJS)
     // ---------------------------------------------------------
-   const sendEmailNotification = (bookingData, bookingId) => {
+    const sendEmailNotification = (bookingData, bookingId) => {
         const templateParams = {
             to_name: "مدير النظام", 
             facility_name: bookingData.facility,
@@ -90,17 +89,16 @@ const BookingPage = () => {
         };
 
         emailjs.send(
-            'service_fy2kk0l',  // ⚠️<< ضعي الكود الذي نسختيه هنا بدلاً من service_xxxxx
-            'template_sh4ienl',          // هذا صحيح (من الصورة السابقة)
+            'service_fy2kk0l',    // Service ID
+            'template_sh4ienl',   // Template ID
             templateParams,
-            'ELWHlKKgEaqg3GZzD'          // هذا صحيح (من الكود الذي أرسلتيه)
+            'ELWHlKKgEaqg3GZzD'   // Public Key
         )
         .then((response) => {
-             console.log('✅ نجاح! تم الإرسال', response.status, response.text);
-             // alert('تم إرسال الإيميل بنجاح!'); // يمكنك تفعيل هذا للتأكد
+             console.log('✅ تم إرسال الإيميل بنجاح!', response.status, response.text);
         }, (err) => {
-             console.log('❌ فشل الإرسال', err);
-             alert('فشل إرسال الإيميل: راجع الـ Console');
+             console.log('❌ فشل إرسال الإيميل...', err);
+             console.error(err);
         });
     };
     // ---------------------------------------------------------
@@ -147,10 +145,9 @@ const BookingPage = () => {
                 },
             });
 
-            // ✅ نجاح الحجز
             setMessage(`تم الحجز بنجاح! رقم الحجز: ${res.data.booking._id}.`);
             
-            // 3. استدعاء دالة إرسال الإيميل هنا بعد نجاح الحفظ
+            // استدعاء دالة الإيميل
             sendEmailNotification(formData, res.data.booking._id);
 
             setError('');
