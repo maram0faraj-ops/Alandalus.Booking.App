@@ -3,83 +3,81 @@
 const Booking = require('../models/Booking');
 const User = require('../models/User'); 
 const sendBookingConfirmation = require('../utils/emailService'); 
+const sendWhatsappNotification = require('../utils/whatsappService');
 
 // ----------------------------------------------------
 // 1. إنشاء حجز جديد (POST /api/bookings)
 // ----------------------------------------------------
 exports.createBooking = async (req, res) => {
-    const { 
-        facility, bookingType, date, duration, activityName, 
-        section, stage, 
-        chairsNeeded, tablesNeeded, 
-    } = req.body;
-    
-    const bookedBy = req.user.id; 
-
-    // التحقق الأساسي
-    if (!facility || !date || !duration || !bookingType || !section || !stage || !activityName) {
-        return res.status(400).json({ message: 'الرجاء توفير جميع الحقول المطلوبة للحجز.' });
-    }
-
     try {
-        // تحويل المدة إلى رقم لضمان دقة الحسابات
-        const durationNum = parseFloat(duration); 
+        const { 
+            facility, bookingType, date, duration, activityName, 
+            section, stage, 
+            chairsNeeded, tablesNeeded, 
+            externalEntityName,
+            // ✅ استقبال الحقول الجديدة ضروري جداً
+            contactPhone, contactEmail 
+        } = req.body;
         
-        // حساب وقت بداية ونهاية الحجز الجديد بالميلي ثانية
+        const bookedBy = req.user.id; 
+
+        // التحقق من الحقول المطلوبة (تمت إضافة التحقق من بيانات التواصل)
+        if (!facility || !date || !duration || !bookingType || !section || !stage || !activityName || !contactPhone || !contactEmail) {
+            return res.status(400).json({ message: 'الرجاء توفير جميع الحقول المطلوبة بما فيها بيانات التواصل.' });
+        }
+
+        const durationNum = parseFloat(duration); 
         const newStart = new Date(date).getTime();
         const newEnd = newStart + (durationNum * 60 * 60 * 1000);
 
-        // ----------------------------------------------------
-        // منطق التحقق من التداخل (تم تحسينه)
-        // ----------------------------------------------------
-        
-        // 1. جلب جميع الحجوزات الخاصة بنفس القاعة فقط
+        // --- التحقق من التداخل ---
         const existingBookings = await Booking.find({ facility: facility });
-
-        // 2. فحص التداخل يدوياً بدقة عالية
         const hasConflict = existingBookings.some(booking => {
-            // تجاهل الحجز إذا كان ملغياً (اختياري حسب تصميمك)
-            // if (booking.status === 'cancelled') return false;
-
+            if (booking.status === 'cancelled' || booking.status === 'rejected') return false;
             const existingStart = new Date(booking.date).getTime();
             const existingDuration = parseFloat(booking.duration);
             const existingEnd = existingStart + (existingDuration * 60 * 60 * 1000);
-
-            // معادلة كشف التداخل: (بداية أ < نهاية ب) و (نهاية أ > بداية ب)
-            return (existingStart < newEnd && existingEnd > newStart);
+            return (newStart < existingEnd && newEnd > existingStart);
         });
 
         if (hasConflict) {
             return res.status(409).json({ 
-                message: `عذراً، يوجد حجز آخر في هذا الوقت في قاعة ${facility}. يرجى اختيار وقت آخر.` 
+                message: `عذراً، يوجد حجز آخر في هذا الوقت في قاعة ${facility}.` 
             });
         }
         
-        // ********* إنشاء الحجز *********
+        // --- إنشاء الحجز ---
         const newBooking = new Booking({
             facility,
             bookingType,
-            date, // سيتم حفظ التاريخ والوقت معاً
+            date, 
             duration: durationNum,
             activityName,
             section, 
             stage,   
+            externalEntityName,
             chairsNeeded, 
             tablesNeeded, 
             bookedBy,
+            // ✅ تمرير البيانات للحفظ في قاعدة البيانات
+            contactPhone, 
+            contactEmail  
         });
 
         const booking = await newBooking.save();
         
-        // إرسال البريد
-        try {
-            const user = await User.findById(bookedBy);
-            if (user && user.email) {
-                sendBookingConfirmation(user.email, booking, user.username);
+        // --- إرسال الإشعارات ---
+        (async () => {
+            try {
+                const user = await User.findById(bookedBy);
+                const recipientName = user ? user.username : "المستخدم";
+
+                if (contactEmail) await sendBookingConfirmation(contactEmail, booking, recipientName);
+                if (contactPhone) await sendWhatsappNotification(contactPhone, booking, recipientName);
+            } catch (notifyError) {
+                console.error('⚠️ Notification Warning:', notifyError.message);
             }
-        } catch (emailError) {
-            console.error('FAILED TO SEND EMAIL:', emailError);
-        }
+        })();
 
         res.status(201).json({ 
             message: 'تم الحجز بنجاح.',
@@ -87,18 +85,18 @@ exports.createBooking = async (req, res) => {
         });
 
     } catch (err) {
-        console.error('SERVER ERROR:', err);
-        res.status(500).send('حدث خطأ أثناء إنشاء الحجز.');
+        console.error('❌ SERVER ERROR:', err);
+        res.status(500).send(`حدث خطأ أثناء إنشاء الحجز: ${err.message}`);
     }
 };
 
 // ----------------------------------------------------
-// 2. جلب حجوزات المستخدم الحالي
+// 2. جلب حجوزات المستخدم
 // ----------------------------------------------------
 exports.getMyBookings = async (req, res) => {
     try {
         const bookings = await Booking.find({ bookedBy: req.user.id })
-            .populate('bookedBy', 'username email') 
+            .populate('bookedBy', 'username email')
             .sort({ date: -1 }); 
         res.json(bookings);
     } catch (err) {
@@ -142,10 +140,37 @@ exports.getAllBookings = async (req, res) => {
     }
 };
 
-// التصدير
+// ----------------------------------------------------
+// 5. جلب إحصائيات التقارير (جديد)
+// ----------------------------------------------------
+exports.getBookingStats = async (req, res) => {
+    try {
+        const totalBookings = await Booking.countDocuments();
+        const pendingBookings = await Booking.countDocuments({ status: 'pending' });
+        const approvedBookings = await Booking.countDocuments({ status: 'approved' });
+        const rejectedBookings = await Booking.countDocuments({ status: 'rejected' });
+        
+        const bookingsByFacility = await Booking.aggregate([
+            { $group: { _id: "$facility", count: { $sum: 1 } } }
+        ]);
+
+        res.json({
+            total: totalBookings,
+            pending: pendingBookings,
+            approved: approvedBookings,
+            rejected: rejectedBookings,
+            byFacility: bookingsByFacility
+        });
+    } catch (err) {
+        console.error(err.message);
+        res.status(500).send('Server Error in Stats');
+    }
+};
+
 module.exports = {
     createBooking: exports.createBooking,
     getMyBookings: exports.getMyBookings,
     cancelBooking: exports.cancelBooking,
     getAllBookings: exports.getAllBookings,
+    getBookingStats: exports.getBookingStats
 };
