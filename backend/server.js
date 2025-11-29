@@ -14,25 +14,27 @@ const app = express();
 // ----------------------------------------------------
 app.use(express.json()); 
 
-// ✅ تحديث قائمة الروابط المسموح لها بالاتصال (CORS)
-const allowedOrigins = [
-    'http://localhost:3000',                      // للسماح بالعمل على جهازك
-    'https://alandalus-booking-app.vercel.app',   // ✅ رابط موقعك الحقيقي على Vercel (بدون شرطة في الآخر)
-    'https://alandalus-booking-app.vercel.app/'   // احتياطاً مع الشرطة
-];
-
+// ✅ إعداد CORS مرن (يسمح بالروابط الديناميكية)
 app.use(cors({
     origin: function (origin, callback) {
         // السماح للطلبات التي ليس لها مصدر (مثل تطبيقات الجوال أو Postman)
         if (!origin) return callback(null, true);
         
-        if (allowedOrigins.indexOf(origin) === -1) {
-            const msg = 'سياسة CORS لا تسمح لهذا الموقع بالاتصال بالسيرفر.';
-            return callback(new Error(msg), false);
+        // السماح بالعمل على الجهاز المحلي
+        if (origin.startsWith('http://localhost')) {
+            return callback(null, true);
         }
-        return callback(null, true);
+
+        // السماح بأي رابط ينتهي بـ vercel.app (لضمان عمل جميع الروابط التجريبية والرئيسية)
+        if (origin.endsWith('.vercel.app')) {
+            return callback(null, true);
+        }
+
+        // إذا لم يتحقق أي شرط، نرفض الطلب
+        const msg = 'سياسة CORS لا تسمح لهذا الموقع بالاتصال بالسيرفر.';
+        return callback(new Error(msg), false);
     },
-    credentials: true // مهم إذا كنت تستخدم الكوكيز أو التوثيق
+    credentials: true 
 }));
 
 // ----------------------------------------------------
