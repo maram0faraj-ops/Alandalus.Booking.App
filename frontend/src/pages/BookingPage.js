@@ -21,9 +21,10 @@ const bookingTypes = ['داخلي', 'خارجي'];
 const BookingPage = () => {
     const navigate = useNavigate();
 
+    // --- تحديث: توليد 60 يوماً (شهرين) بدلاً من 14 يوماً ---
     const getNextDays = () => {
         const days = [];
-        for (let i = 0; i < 14; i++) { 
+        for (let i = 0; i < 60; i++) { 
             const d = moment().add(i, 'days');
             days.push({
                 value: d.clone().locale('en').format('YYYY-MM-DD'), 
@@ -70,7 +71,6 @@ const BookingPage = () => {
         setFormData({ ...formData, [name]: value });
     };
 
-    // --- 1. دالة إرسال الإيميل ---
     const sendEmailNotification = (bookingData, bookingId) => {
         const templateParams = {
             to_name: "مدير النظام", 
@@ -81,59 +81,32 @@ const BookingPage = () => {
         };
 
         emailjs.send(
-            'service_fy2kk0l',    // Service ID
-            'template_sh4ienl',   // Template ID
+            'service_fy2kk0l',    
+            'template_sh4ienl',   
             templateParams,
-            'ELWHlKKgEaqg3GZzD'   // Public Key (الحرف الصغير L)
+            'ELWHlKKgEaqg3GZzD'   
         )
-        .then(() => {
-             console.log('✅ تم إرسال الإيميل بنجاح');
-             // alert("تم إرسال الإيميل بنجاح إلى بريدك"); // يمكنك تفعيل هذا للتأكد
-        })
+        .then(() => console.log('✅ تم إرسال الإيميل بنجاح'))
         .catch((err) => {
              console.error('❌ فشل إرسال الإيميل', err);
-             alert("تنبيه: تم الحجز ولكن فشل إرسال الإيميل. تأكد من صحة البريد.");
         });
     };
 
-    // --- 2. دالة فتح الواتساب ---
     const openWhatsApp = (bookingData, bookingId) => {
-        // تنظيف رقم الجوال من أي رموز غير رقمية
         let phone = bookingData.contactPhone.replace(/[^0-9]/g, '');
-        
-        // معالجة صيغ الرقم السعودي
         if (phone.startsWith('05')) {
-            phone = '966' + phone.substring(1); // تحويل 05xxxx إلى 9665xxxx
+            phone = '966' + phone.substring(1);
         } else if (phone.startsWith('5')) {
             phone = '966' + phone;
         } else if (!phone.startsWith('966')) {
-            // إذا لم يبدأ بـ 966 ولم يكن 05، نفترض أنه 966 ونضيفها احتياطاً
              phone = '966' + phone;
         }
 
-        const text = `
-*✅ تأكيد حجز - مدارس الأندلس*
----------------------------
-رقم الحجز: ${bookingId}
-المرفق: ${bookingData.facility}
-التاريخ: ${bookingData.datePart}
-الوقت: ${bookingData.timePart}
-النشاط: ${bookingData.activityName}
----------------------------
-(رسالة تلقائية للتوثيق)
-        `.trim();
-
+        const text = `*✅ تأكيد حجز - مدارس الأندلس*\nرقم الحجز: ${bookingId}\nالمرفق: ${bookingData.facility}\nالتاريخ: ${bookingData.datePart}`.trim();
         const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
         setWhatsappLink(url);
-
-        // محاولة الفتح التلقائي
         const win = window.open(url, '_blank');
-        
-        if (!win || win.closed || typeof win.closed == 'undefined') {
-            // إذا فشل الفتح التلقائي (بسبب مانع الإعلانات)، نظهر الزر
-            return false;
-        }
-        return true;
+        return !!(win && !win.closed);
     };
 
     const handleSubmit = async (e) => {
@@ -148,52 +121,38 @@ const BookingPage = () => {
             return;
         }
 
-        // تنبيه مبدئي للتأكد أن الزر يعمل
-        // alert("جاري إرسال الطلب للسيرفر..."); 
-
         try {
             const dateTimeString = `${formData.datePart}T${formData.timePart}`;
             const fullDate = new Date(dateTimeString);
-
-            if (isNaN(fullDate.getTime())) {
-                alert("تنسيق التاريخ غير صحيح");
-                return;
-            }
-
             const payload = { ...formData, date: fullDate };
 
-            // 1. إرسال للسيرفر
             const res = await axios.post(`${API_URL}/bookings`, payload, {
                 headers: { 'x-auth-token': token, 'Content-Type': 'application/json' },
             });
 
-            // إذا وصلنا هنا، يعني الحجز نجح
             const bookingId = res.data.booking._id;
-            // alert(`تم الحجز بنجاح! رقم الحجز: ${bookingId}`);
-
-            setShowSuccess(true); // إظهار رسالة النجاح الخضراء
-
-            // 2. إرسال الإيميل
+            setShowSuccess(true);
             sendEmailNotification(formData, bookingId);
 
-            // 3. فتح الواتساب
             setTimeout(() => {
                 const opened = openWhatsApp(formData, bookingId);
-                if (!opened) {
-                    alert("تم الحجز ✅\n\nلكن المتصفح منع فتح الواتساب تلقائياً.\nالرجاء الضغط على الزر الأخضر الظاهر في الشاشة لإرسال الرسالة.");
-                }
+                if (!opened) alert("تم الحجز ✅\nالرجاء الضغط على الزر الأخضر لتأكيد الحجز عبر واتساب.");
             }, 1000);
-
-            // تفريغ النموذج (اختياري)
-            // setFormData({ ...formData, activityName: '', contactPhone: '', contactEmail: '' });
 
         } catch (err) {
             console.error('Booking error:', err.response);
-            const serverMsg = err.response?.data?.message || 'فشل الاتصال بالخادم';
             
-            // إظهار الخطأ بوضوح
-            alert(`❌ فشل الحجز!\nالسبب: ${serverMsg}`);
-            setError(serverMsg);
+            // --- تحديث: عرض تفاصيل الحجز المتداخل بوضوح للمستخدم ---
+            if (err.response && err.response.status === 409) {
+                const ov = err.response.data.details;
+                const conflictMsg = `❌ القاعة محجوزة مسبقاً!\nبواسطة: ${ov.reserverName}\nالتاريخ: ${ov.date}\nالمدة: ${ov.duration} ساعة`;
+                setError(conflictMsg);
+                alert(conflictMsg);
+            } else {
+                const serverMsg = err.response?.data?.message || 'فشل الاتصال بالخادم';
+                setError(serverMsg);
+                alert(`❌ فشل الحجز!\nالسبب: ${serverMsg}`);
+            }
         }
     };
 
@@ -206,46 +165,31 @@ const BookingPage = () => {
             <Card className="shadow-lg p-4 border-0" style={{ borderRadius: '15px' }}>
                 <div className="text-center mb-4">
                     <h2 className="fw-bold text-primary">نموذج حجز قاعة جديدة</h2>
-                    <p className="text-muted">يرجى تعبئة البيانات بدقة لضمان اعتماد الحجز</p>
+                    <p className="text-muted">الفترة المتاحة للحجز الآن: شهرين (60 يوماً)</p>
                 </div>
                 
-                {/* رسالة نجاح كبيرة وواضحة */}
                 {showSuccess && (
                     <Alert variant="success" className="text-center p-4">
                         <h4 className="fw-bold">✅ تم الحجز بنجاح!</h4>
-                        <p>تم إرسال تفاصيل الحجز إلى بريدك الإلكتروني.</p>
-                        
                         {whatsappLink && (
                             <div className="mt-3">
-                                <p className="mb-2 fw-bold text-dark">هل لم يفتح الواتساب تلقائياً؟ اضغط هنا:</p>
-                                <a 
-                                    href={whatsappLink} 
-                                    target="_blank" 
-                                    rel="noreferrer" 
-                                    className="btn btn-success fw-bold px-4 py-2"
-                                    style={{ fontSize: '1.1rem' }}
-                                >
-                                    📱 فتح الواتساب وتأكيد الحجز
-                                </a>
+                                <a href={whatsappLink} target="_blank" rel="noreferrer" className="btn btn-success fw-bold px-4 py-2">📱 فتح الواتساب وتأكيد الحجز</a>
                             </div>
                         )}
                         <hr />
-                        <Button variant="outline-success" size="sm" onClick={() => navigate('/')}>
-                            العودة للصفحة الرئيسية
-                        </Button>
+                        <Button variant="outline-success" size="sm" onClick={() => navigate('/')}>العودة للرئيسية</Button>
                     </Alert>
                 )}
 
-                {error && <Alert variant="danger">{error}</Alert>}
+                {error && <Alert variant="danger" style={{ whiteSpace: 'pre-line' }}>{error}</Alert>}
 
-                {/* إخفاء النموذج عند النجاح لمنع التكرار */}
                 {!showSuccess && (
                 <Form onSubmit={handleSubmit}>
                     <Row className="g-3">
                         <Col md={6}>
                             <Card className="p-3 border-0 bg-light h-100">
                                 <h5 className="text-pink fw-bold mb-3">بيانات القاعة والتوقيت</h5>
-                                <Form.Group className="mb-3" controlId="facility">
+                                <Form.Group className="mb-3">
                                     <Form.Label style={labelStyle}>القاعة / المرفق</Form.Label>
                                     <Form.Select name="facility" value={formData.facility} onChange={handleChange} style={inputStyle}>
                                         {facilities.map(f => <option key={f} value={f}>{f}</option>)}
@@ -254,7 +198,7 @@ const BookingPage = () => {
                                 <Row>
                                     <Col>
                                         <Form.Group className="mb-3">
-                                            <Form.Label style={labelStyle}>تاريخ الحجز</Form.Label>
+                                            <Form.Label style={labelStyle}>تاريخ الحجز (متاح لـ 60 يوماً)</Form.Label>
                                             <Form.Select name="datePart" value={formData.datePart} onChange={handleChange} style={inputStyle}>
                                                 {availableDates.map((d, idx) => (<option key={idx} value={d.value}>{d.label}</option>))}
                                             </Form.Select>
@@ -271,7 +215,7 @@ const BookingPage = () => {
                                     <Form.Label style={{...labelStyle, color: '#6c757d'}}>اليوم المحدد</Form.Label>
                                     <Form.Control type="text" value={dayOfWeek} disabled style={{...inputStyle, backgroundColor: '#e9ecef'}} />
                                 </Form.Group>
-                                <Form.Group className="mb-3" controlId="section">
+                                <Form.Group className="mb-3">
                                     <Form.Label style={labelStyle}>القسم</Form.Label>
                                     <Form.Select name="section" value={formData.section} onChange={handleChange} style={inputStyle}>
                                         {sections.map(s => <option key={s} value={s}>{s}</option>)}
@@ -332,7 +276,7 @@ const BookingPage = () => {
                         <Row>
                             <Col md={6}>
                                 <Form.Group className="mb-3" controlId="contactPhone">
-                                    <Form.Label style={labelStyle}>رقم الجوال (لإشعار الواتساب) <span className="text-danger">*</span></Form.Label>
+                                    <Form.Label style={labelStyle}>رقم الجوال <span className="text-danger">*</span></Form.Label>
                                     <Form.Control type="tel" name="contactPhone" value={formData.contactPhone} onChange={handleChange} placeholder="05xxxxxxxx" required style={{...inputStyle, backgroundColor: '#fff'}} />
                                 </Form.Group>
                             </Col>
