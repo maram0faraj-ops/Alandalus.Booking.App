@@ -1,0 +1,90 @@
+/* تعريف المتغيرات المخصصة */
+:root {
+  --navy-blue: #040d96; /* اللون الكحلي */
+  --pink: #ff69b4;      /* اللون الوردي */
+  --white: #ffffff;     /* اللون الأبيض */
+  --light-gray: #f8f9fa;
+}
+
+/* 1. تخصيص Navbar */
+.navbar-custom {
+  background-color: var(--navy-blue) !important;
+}
+
+.navbar-custom .navbar-brand,
+.navbar-custom .nav-link {
+  color: var(--white) !important;
+}
+
+.navbar-custom .nav-link:hover {
+  color: var(--pink) !important;
+}
+
+/* تنسيق الشعار في الناف بار */
+.navbar-brand img {
+  height: 50px; /* حجم الشعار */
+  margin-left: 10px;
+  background-color: rgba(255, 255, 255, 0.1); /* خلفية شفافة خفيفة للشعار إذا لزم */
+  padding: 5px;
+  border-radius: 5px;
+}
+
+/* 2. تخصيص الأزرار */
+.btn-primary {
+  background-color: var(--navy-blue) !important;
+  border-color: var(--navy-blue) !important;
+}
+
+.btn-primary:hover {
+  background-color: #040d96 !important; /* درجة أغمق قليلاً */
+  border-color: #040d96 !important;
+}
+
+.btn-success {
+  background-color: var(--pink) !important;
+  border-color: var(--pink) !important;
+}
+
+.btn-success:hover {
+  background-color: #d45a9c !important;
+  border-color: #d45a9c !important;
+}
+
+.btn-outline-light {
+  color: var(--pink) !important;
+  border-color: var(--pink) !important;
+}
+
+.btn-outline-light:hover {
+  background-color: var(--pink) !important;
+  color: var(--white) !important;
+}
+
+/* 3. تخصيص النصوص والعناوين */
+.text-primary {
+  color: var(--navy-blue) !important;
+}
+
+.text-pink {
+  color: var(--pink) !important;
+}
+
+/* 4. تخصيص البطاقات (Cards) */
+.card {
+  border: 1px solid var(--navy-blue) !important;
+}
+
+.card-header {
+  background-color: var(--navy-blue) !important;
+  color: var(--white) !important;
+}
+
+/* 5. تخصيص الجداول */
+.table-striped tbody tr:nth-of-type(odd) {
+  background-color: rgba(0, 31, 63, 0.05) !important; /* لون كحلي خفيف جداً */
+}
+
+.table thead th {
+  background-color: var(--navy-blue) !important;
+  color: var(--white) !important;
+}
