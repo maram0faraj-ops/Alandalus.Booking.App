@@ -4,28 +4,65 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
+const authRoutes = require('./routes/authRoutes');
+const bookingRoutes = require('./routes/bookingRoutes');
+const reportRoutes = require('./routes/reportRoutes'); 
 const app = express();
-app.use(cors());
-app.use(express.json());
 
-// --- حل مشكلة Render الأهم: الاستماع للمنفذ أولاً ---
-const PORT = process.env.PORT || 10000;
-const server = app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server listening on port ${PORT}`);
-});
+// ----------------------------------------------------
+// Middleware
+// ----------------------------------------------------
+app.use(express.json()); 
 
-// الرابط من متغيرات البيئة
-const MONGODB_URI = process.env.MONGO_URI || "mongodb+srv://maram0faraj:NewPass2050@cluster0.xpf2rmx.mongodb.net/AlandalusDB?retryWrites=true&w=majority";
+// ✅ إعداد CORS مرن (يسمح بالروابط الديناميكية)
+app.use(cors({
+    origin: function (origin, callback) {
+        // السماح للطلبات التي ليس لها مصدر (مثل تطبيقات الجوال أو Postman)
+        if (!origin) return callback(null, true);
+        
+        // السماح بالعمل على الجهاز المحلي
+        if (origin.startsWith('http://localhost')) {
+            return callback(null, true);
+        }
+
+        // السماح بأي رابط ينتهي بـ vercel.app (لضمان عمل جميع الروابط التجريبية والرئيسية)
+        if (origin.endsWith('.vercel.app')) {
+            return callback(null, true);
+        }
+
+        // إذا لم يتحقق أي شرط، نرفض الطلب
+        const msg = 'سياسة CORS لا تسمح لهذا الموقع بالاتصال بالسيرفر.';
+        return callback(new Error(msg), false);
+    },
+    credentials: true 
+}));
+
+// ----------------------------------------------------
+// الاتصال بقاعدة البيانات
+// ----------------------------------------------------
+const PORT = process.env.PORT || 5000;
+const MONGODB_URI = "mongodb+srv://maram0faraj:NewPass2050@cluster0.xpf2rmx.mongodb.net/?appName=Cluster0";
 
 mongoose.connect(MONGODB_URI)
-    .then(() => console.log('✅ Connected to MongoDB Atlas'))
+    .then(() => {
+        console.log('✅ تم الاتصال بنجاح بـ MongoDB');
+        app.listen(PORT, () => {
+            console.log(`🚀 الخادم يعمل على المنفذ: ${PORT}`);
+        });
+    })
     .catch((err) => {
-        console.error('❌ DB Connection Error:', err.message);
-        // لا نغلق السيرفر هنا لنسمح لـ Render باكتشاف المنفذ المفتوح
+        console.error('❌ فشل الاتصال بقاعدة البيانات:', err.message);
+        process.exit(1); 
     });
 
-app.use('/api/auth', require('./routes/authRoutes')); 
-app.use('/api/bookings', require('./routes/bookingRoutes'));
-app.use('/api/reports', require('./routes/reportRoutes'));
+// ----------------------------------------------------
+// المسارات (Routes)
+// ----------------------------------------------------
 
-app.get('/', (req, res) => res.json({ status: "Online" }));
+app.get('/', (req, res) => {
+    res.json({ message: 'Andalus Booking API is running successfully!' });
+});
+
+app.use('/api/auth', authRoutes); 
+app.use('/api/bookings', bookingRoutes);
+app.use('/api/reports', reportRoutes);
