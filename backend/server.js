@@ -16,7 +16,7 @@ app.use('/api/bookings', require('./routes/bookingRoutes'));
 // backend/server.js
 
 // تغيير هذا السطر ليقرأ من إعدادات Render أولاً
-const MONGODB_URI = process.env.MONGO_URI || "mongodb+srv://admin: 0slNmWEraNG0Csab@cluster0.szhmu2u.mongodb.net/?appName=Cluster0";
+const MONGODB_URI = process.env.MONGO_URI || "mongodb+srv://admin: Alshammari2312398@cluster0.szhmu2u.mongodb.net/?appName=Cluster0";
 
 mongoose.connect(MONGODB_URI)
     .then(() => {
