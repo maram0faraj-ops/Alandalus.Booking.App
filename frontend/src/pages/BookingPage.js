@@ -4,10 +4,12 @@ import axios from 'axios';
 import moment from 'moment';
 import 'moment/locale/ar-sa'; 
 
+// ضبط اللغة والوقت
 moment.locale('ar-sa'); 
 const API_URL = process.env.REACT_APP_API_URL || 'https://alandalus-booking-app.onrender.com/api';
 
 const BookingPage = () => {
+    // تجهيز قائمة التواريخ المتاحة خلال 60 يوم
     const availableDates = useMemo(() => {
         const days = [];
         for (let i = 0; i < 60; i++) { 
@@ -17,10 +19,11 @@ const BookingPage = () => {
         return days;
     }, []);
 
+    // حالة النموذج مع كافة الحقول المطلوبة
     const [formData, setFormData] = useState({
         facility: 'المسرح', 
-        section: 'بنات', // الحقل الجديد المضاف
-        stage: 'ابتدائي', 
+        section: 'بنات', 
+        stage: 'الابتدائي', 
         datePart: availableDates[0].value, 
         timePart: '08:00', 
         activityName: '', 
@@ -59,7 +62,7 @@ const BookingPage = () => {
                 {showSuccess && <Alert variant="success" className="text-center">✅ تم الحجز بنجاح!</Alert>}
                 <Form onSubmit={handleSubmit}>
                     <Row className="g-3">
-                        {/* ✅ إضافة القسم والمرحلة جنباً إلى جنب */}
+                        {/* 1. القسم */}
                         <Col md={6}>
                             <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">القسم</Form.Label>
@@ -69,15 +72,23 @@ const BookingPage = () => {
                                 </Form.Select>
                             </Form.Group>
                         </Col>
+
+                        {/* 2. المرحلة (المسميات المحدثة) */}
                         <Col md={6}>
                             <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">المرحلة</Form.Label>
                                 <Form.Select value={formData.stage} onChange={(e) => setFormData({...formData, stage: e.target.value})}>
-                                    {['تمهيدي', 'ابتدائي', 'متوسط', 'ثانوي', 'إداري'].map(s => <option key={s} value={s}>{s}</option>)}
+                                    <option value="رياض أطفال">رياض أطفال</option>
+                                    <option value="الطفولة المبكرة">الطفولة المبكرة</option>
+                                    <option value="الابتدائي">الابتدائي</option>
+                                    <option value="المتوسط">المتوسط</option>
+                                    <option value="الثانوي">الثانوي</option>
+                                    <option value="إداري">إداري</option>
                                 </Form.Select>
                             </Form.Group>
                         </Col>
 
+                        {/* 3. القاعة واسم الفعالية */}
                         <Col md={6}>
                             <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">القاعة</Form.Label>
@@ -93,9 +104,10 @@ const BookingPage = () => {
                             </Form.Group>
                         </Col>
 
+                        {/* 4. التاريخ والوقت */}
                         <Col md={6}>
                             <Form.Group className="mb-3">
-                                <Form.Label className="fw-bold">التاريخ المتاح</Form.Label>
+                                <Form.Label className="fw-bold">التاريخ المتاح (خلال 60 يوم)</Form.Label>
                                 <Form.Select value={formData.datePart} onChange={(e) => setFormData({...formData, datePart: e.target.value})}>
                                     {availableDates.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
                                 </Form.Select>
@@ -114,6 +126,7 @@ const BookingPage = () => {
                             </Form.Group>
                         </Col>
 
+                        {/* 5. بيانات التواصل */}
                         <Col md={6}>
                             <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">الجوال (مطلوب للتأكيد)</Form.Label>
