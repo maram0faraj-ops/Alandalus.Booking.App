@@ -13,13 +13,18 @@ app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
 
 // الربط والمنفذ لـ Render
-const PORT = process.env.PORT || 10000;
-const MONGODB_URI = process.env.MONGO_URI || "mongodb+srv://maram0faraj:NewPass2050@cluster0.xpf2rmx.mongodb.net/AlandalusDB?retryWrites=true&w=majority";
+// backend/server.js
 
-// تشغيل السيرفر فوراً لضمان Port Binding
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`🚀 Server active on port: ${PORT}`);
-});
+// تغيير هذا السطر ليقرأ من إعدادات Render أولاً
+const MONGODB_URI = process.env.MONGO_URI || "mongodb+srv://admin: 0slNmWEraNG0Csab@cluster0.szhmu2u.mongodb.net/?appName=Cluster0";
+
+mongoose.connect(MONGODB_URI)
+    .then(() => {
+        console.log('✅ تم الاتصال بنجاح بقاعدة البيانات الجديدة');
+        app.listen(PORT, () => {
+            console.log(`🚀 الخادم يعمل على المنفذ: ${PORT}`);
+        });
+    })
 
 mongoose.connect(MONGODB_URI)
     .then(() => console.log('✅ Connected to MongoDB Atlas'))
