@@ -83,8 +83,8 @@ const BookingPage = () => {
                                     <option value="الابتدائي">الابتدائي</option>
                                     <option value="المتوسط">المتوسط</option>
                                     <option value="الثانوي">الثانوي</option>
-                                    <option value="إداري">إداري</option>
-                                </Form.Select>
+                                 <option value="الإدارة العامة">الإدارة العامة</option> {/* تم التعديل هنا */}
+                              </Form.Select>
                             </Form.Group>
                         </Col>
 
