@@ -1,7 +1,9 @@
 // backend/controllers/bookingController.js
 const Booking = require('../models/Booking');
-const User = require('../models/User');
 
+// ----------------------------------------------------
+// 1. إنشاء حجز جديد (POST /api/bookings)
+// ----------------------------------------------------
 exports.createBooking = async (req, res) => {
     try {
         const { 
@@ -9,12 +11,14 @@ exports.createBooking = async (req, res) => {
             contactPhone, contactEmail, bookingType 
         } = req.body;
 
-        // 1. التحقق من البيانات الأساسية لضمان عدم الانهيار
+        // التحقق من البيانات الأساسية
         if (!facility || !date || !activityName || !contactPhone) {
-            return res.status(400).json({ message: 'يرجى إكمال البيانات الأساسية (القاعة، التاريخ، الفعالية، والجوال).' });
+            return res.status(400).json({ 
+                message: 'يرجى إكمال البيانات الأساسية (القاعة، التاريخ، الفعالية، والجوال).' 
+            });
         }
 
-        // 2. إنشاء الحجز في قاعدة البيانات فوراً
+        // إنشاء الحجز وربطه بصاحب الحساب المسجل
         const newBooking = new Booking({
             facility,
             section: section || 'بنات',
@@ -30,44 +34,52 @@ exports.createBooking = async (req, res) => {
 
         const savedBooking = await newBooking.save();
 
-        // 3. منطقة الإشعارات (محمية بـ try-catch مستقلة لمنع خطأ 500)
-        try {
-            // هنا يمكنكِ لاحقاً تفعيل خدمات الإيميل والواتساب
-            console.log('✅ تم حفظ الحجز بنجاح، جاري معالجة الإشعارات صامتاً...');
-        } catch (notifyErr) {
-            console.error('⚠️ فشل إرسال الإشعارات ولكن الحجز تم حفظه:', notifyErr.message);
-        }
+        // ✅ تم تعطيل الإشعارات مؤقتاً لكسر حلقة خطأ 500
+        console.log('✅ تم حفظ الحجز بنجاح في قاعدة البيانات.');
 
-        // 4. الرد بالنجاح للمتصفح
         res.status(201).json({ 
             message: 'تم إرسال طلب الحجز بنجاح!',
             booking: savedBooking 
         });
 
     } catch (err) {
-        console.error('❌ خطأ داخلي في السيرفر:', err.message);
-        res.status(500).json({ message: 'حدث خطأ داخلي في السيرفر، يرجى مراجعة سجلات Render.' });
+        console.error('❌ Server Error:', err.message);
+        res.status(500).json({ message: 'فشل السيرفر في معالجة الطلب، تأكد من اتصال قاعدة البيانات.' });
     }
 };
 
-// بقية الدوال (getMyBookings, getAllBookings, cancelBooking) تظل كما هي لديكِ
+// ----------------------------------------------------
+// 2. جلب حجوزاتي الشخصية
+// ----------------------------------------------------
 exports.getMyBookings = async (req, res) => {
     try {
         const bookings = await Booking.find({ bookedBy: req.user.id }).sort({ date: -1 });
         res.json(bookings);
-    } catch (err) { res.status(500).send('Server Error'); }
+    } catch (err) {
+        res.status(500).send('Server Error');
+    }
 };
 
+// ----------------------------------------------------
+// 3. جلب جميع الحجوزات (للمسؤول)
+// ----------------------------------------------------
 exports.getAllBookings = async (req, res) => {
     try {
         const bookings = await Booking.find().populate('bookedBy', 'username email').sort({ date: -1 });
         res.json(bookings);
-    } catch (err) { res.status(500).send('Server Error'); }
+    } catch (err) {
+        res.status(500).send('Server Error');
+    }
 };
 
+// ----------------------------------------------------
+// 4. إلغاء حجز
+// ----------------------------------------------------
 exports.cancelBooking = async (req, res) => {
     try {
         await Booking.findByIdAndDelete(req.params.id);
         res.json({ message: 'تم إلغاء الحجز بنجاح.' });
-    } catch (err) { res.status(500).send('Server Error'); }
+    } catch (err) {
+        res.status(500).send('Server Error');
+    }
 };
