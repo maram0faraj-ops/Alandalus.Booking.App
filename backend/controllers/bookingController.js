@@ -1,9 +1,7 @@
 // backend/controllers/bookingController.js
 const Booking = require('../models/Booking');
 
-// ----------------------------------------------------
 // 1. إنشاء حجز جديد (POST /api/bookings)
-// ----------------------------------------------------
 exports.createBooking = async (req, res) => {
     try {
         const { 
@@ -34,9 +32,7 @@ exports.createBooking = async (req, res) => {
 
         const savedBooking = await newBooking.save();
 
-        // ✅ تم تعطيل الإشعارات مؤقتاً لكسر حلقة خطأ 500
-        console.log('✅ تم حفظ الحجز بنجاح في قاعدة البيانات.');
-
+        // ✅ رسالة نجاح واضحة للمتصفح لتجاوز خطأ 500
         res.status(201).json({ 
             message: 'تم إرسال طلب الحجز بنجاح!',
             booking: savedBooking 
@@ -44,42 +40,30 @@ exports.createBooking = async (req, res) => {
 
     } catch (err) {
         console.error('❌ Server Error:', err.message);
-        res.status(500).json({ message: 'فشل السيرفر في معالجة الطلب، تأكد من اتصال قاعدة البيانات.' });
+        res.status(500).json({ message: 'خطأ داخلي: تأكد من إعدادات قاعدة البيانات.' });
     }
 };
 
-// ----------------------------------------------------
-// 2. جلب حجوزاتي الشخصية
-// ----------------------------------------------------
+// جلب الحجوزات الشخصية
 exports.getMyBookings = async (req, res) => {
     try {
         const bookings = await Booking.find({ bookedBy: req.user.id }).sort({ date: -1 });
         res.json(bookings);
-    } catch (err) {
-        res.status(500).send('Server Error');
-    }
+    } catch (err) { res.status(500).send('Server Error'); }
 };
 
-// ----------------------------------------------------
-// 3. جلب جميع الحجوزات (للمسؤول)
-// ----------------------------------------------------
+// جلب كافة الحجوزات
 exports.getAllBookings = async (req, res) => {
     try {
         const bookings = await Booking.find().populate('bookedBy', 'username email').sort({ date: -1 });
         res.json(bookings);
-    } catch (err) {
-        res.status(500).send('Server Error');
-    }
+    } catch (err) { res.status(500).send('Server Error'); }
 };
 
-// ----------------------------------------------------
-// 4. إلغاء حجز
-// ----------------------------------------------------
+// إلغاء الحجز
 exports.cancelBooking = async (req, res) => {
     try {
         await Booking.findByIdAndDelete(req.params.id);
         res.json({ message: 'تم إلغاء الحجز بنجاح.' });
-    } catch (err) {
-        res.status(500).send('Server Error');
-    }
+    } catch (err) { res.status(500).send('Server Error'); }
 };
