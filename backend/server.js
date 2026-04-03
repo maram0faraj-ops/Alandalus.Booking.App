@@ -3,7 +3,6 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const path = require('path');
 
 dotenv.config();
 const app = express();
@@ -20,7 +19,7 @@ if (mongoURI) {
         .catch(err => console.error('❌ Database Connection Error:', err.message));
 }
 
-// 2. تعريف المسارات (مطابقة لملفاتك)
+// 2. تعريف المسارات
 const authRoutes = require('./routes/authRoutes'); 
 const bookingRoutes = require('./routes/bookingRoutes');
 const reportRoutes = require('./routes/reportRoutes');
@@ -29,15 +28,10 @@ app.use('/api/auth', authRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/reports', reportRoutes);
 
-// 3. خدمة الملفات الثابتة - نسخة مبسطة لتجنب خطأ Status 1
-if (process.env.NODE_ENV === 'production') {
-    const frontendPath = path.join(__dirname, '../frontend/build');
-    app.use(express.static(frontendPath));
-    
-    app.get('*', (req, res) => {
-        res.sendFile(path.join(frontendPath, 'index.html'));
-    });
-}
+// 3. مسار بسيط للتأكد من عمل السيرفر
+app.get('/', (req, res) => {
+    res.send('Alandalus Booking API is running...');
+});
 
 // 4. تشغيل السيرفر
 const PORT = process.env.PORT || 10000;
