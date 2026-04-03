@@ -1,27 +1,21 @@
 // backend/middleware/auth.js
-
 const jwt = require('jsonwebtoken');
 
-function auth(req, res, next) {
-    // 1. جلب الرمز من الترويسة
-    const token = req.header('x-auth-token'); 
+module.exports = function (req, res, next) {
+    // 1. الحصول على الرمز من الهيدر (x-auth-token)
+    const token = req.header('x-auth-token');
 
-    // 2. التحقق من وجود الرمز
+    // 2. التحقق إذا لم يكن هناك رمز
     if (!token) {
         return res.status(401).json({ message: 'لا يوجد رمز، تم رفض الوصول.' });
     }
 
+    // 3. التحقق من صحة الرمز باستخدام نفس السر الموحد
     try {
-        // 3. التحقق من صحة الرمز
-        // 🛠️ التعديل هنا: إضافة || "secretToken" لتطابق ملف authController
-        // هذا يضمن العمل حتى لو لم يتم ضبط المتغير في Render
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || "secretToken");
-        
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || "AlandalusSecret2026");
         req.user = decoded.user;
         next();
     } catch (err) {
-        res.status(401).json({ message: 'الرمز غير صالح أو منتهي الصلاحية.' });
+        res.status(401).json({ message: 'انتهت جلسة الدخول، يرجى تسجيل الدخول مرة أخرى.' });
     }
 };
-
-module.exports = auth;
