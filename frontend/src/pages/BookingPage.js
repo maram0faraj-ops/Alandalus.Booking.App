@@ -4,7 +4,7 @@ import axios from 'axios';
 import moment from 'moment';
 import 'moment/locale/ar-sa'; 
 
-// ضبط اللغة والوقت
+// إعدادات اللغة والوقت لمدارس الأندلس
 moment.locale('ar-sa'); 
 const API_URL = process.env.REACT_APP_API_URL || 'https://alandalus-booking-app.onrender.com/api';
 
@@ -19,7 +19,7 @@ const BookingPage = () => {
         return days;
     }, []);
 
-    // حالة النموذج مع كافة الحقول المطلوبة
+    // حالة النموذج مع المسميات المحدثة
     const [formData, setFormData] = useState({
         facility: 'المسرح', 
         section: 'بنات', 
@@ -28,7 +28,7 @@ const BookingPage = () => {
         timePart: '08:00', 
         activityName: '', 
         duration: 1, 
-        bookingType: 'داخلي', 
+        bookingType: 'داخلي', // حقل تقني مطلوب للسيرفر
         contactPhone: '', 
         contactEmail: '' 
     });
@@ -36,21 +36,32 @@ const BookingPage = () => {
     const [error, setError] = useState('');
     const [showSuccess, setShowSuccess] = useState(false);
 
+    // دالة الإرسال المحدثة لضمان توافق البيانات مع السيرفر
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
+        setShowSuccess(false);
         const token = localStorage.getItem('token');
+        
         try {
+            // دمج التاريخ والوقت وإضافة الحقول الإجبارية للسيرفر
             const payload = { 
                 ...formData, 
                 date: new Date(`${formData.datePart}T${formData.timePart}`) 
             };
+            
             await axios.post(`${API_URL}/bookings`, payload, {
-                headers: { 'x-auth-token': token, 'Content-Type': 'application/json' },
+                headers: { 
+                    'x-auth-token': token, 
+                    'Content-Type': 'application/json' 
+                },
             });
+            
             setShowSuccess(true);
+            setError('');
         } catch (err) {
-            setError(err.response?.data?.message || 'حدث خطأ في الاتصال');
+            // عرض رسالة الخطأ الدقيقة لتجنب "خطأ في الاتصال" المبهم
+            setError(err.response?.data?.message || 'حدث خطأ في الاتصال، يرجى التأكد من تعبئة كافة الحقول');
         }
     };
 
@@ -58,11 +69,13 @@ const BookingPage = () => {
         <Container className="mt-4">
             <Card className="shadow-lg p-4 border-0 rounded-4">
                 <h3 className="text-center text-primary fw-bold mb-4">نموذج حجز قاعة جديدة - مدارس الأندلس</h3>
-                {error && <Alert variant="danger" className="text-center">{error}</Alert>}
-                {showSuccess && <Alert variant="success" className="text-center">✅ تم الحجز بنجاح!</Alert>}
+                
+                {error && <Alert variant="danger" className="text-center fw-bold">{error}</Alert>}
+                {showSuccess && <Alert variant="success" className="text-center fw-bold">✅ تم إرسال طلب الحجز بنجاح!</Alert>}
+                
                 <Form onSubmit={handleSubmit}>
                     <Row className="g-3">
-                        {/* 1. القسم */}
+                        {/* 1. القسم والمرحلة */}
                         <Col md={6}>
                             <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">القسم</Form.Label>
@@ -72,8 +85,6 @@ const BookingPage = () => {
                                 </Form.Select>
                             </Form.Group>
                         </Col>
-
-                        {/* 2. المرحلة (المسميات المحدثة) */}
                         <Col md={6}>
                             <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">المرحلة</Form.Label>
@@ -83,12 +94,12 @@ const BookingPage = () => {
                                     <option value="الابتدائي">الابتدائي</option>
                                     <option value="المتوسط">المتوسط</option>
                                     <option value="الثانوي">الثانوي</option>
-                                 <option value="الإدارة العامة">الإدارة العامة</option> {/* تم التعديل هنا */}
-                              </Form.Select>
+                                    <option value="الإدارة العامة">الإدارة العامة</option>
+                                </Form.Select>
                             </Form.Group>
                         </Col>
 
-                        {/* 3. القاعة واسم الفعالية */}
+                        {/* 2. القاعة واسم الفعالية */}
                         <Col md={6}>
                             <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">القاعة</Form.Label>
@@ -104,7 +115,7 @@ const BookingPage = () => {
                             </Form.Group>
                         </Col>
 
-                        {/* 4. التاريخ والوقت */}
+                        {/* 3. التاريخ والوقت */}
                         <Col md={6}>
                             <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">التاريخ المتاح (خلال 60 يوم)</Form.Label>
@@ -126,7 +137,7 @@ const BookingPage = () => {
                             </Form.Group>
                         </Col>
 
-                        {/* 5. بيانات التواصل */}
+                        {/* 4. بيانات التواصل */}
                         <Col md={6}>
                             <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">الجوال (مطلوب للتأكيد)</Form.Label>
