@@ -2,14 +2,12 @@ import React, { useState, useMemo } from 'react';
 import { Container, Card, Form, Button, Row, Col, Alert } from 'react-bootstrap';
 import axios from 'axios';
 import moment from 'moment';
-import 'moment/locale/ar-sa'; // استيراد اللغة العربية
+import 'moment/locale/ar-sa'; 
 
-// ضبط اللغة والوقت
 moment.locale('ar-sa'); 
 const API_URL = process.env.REACT_APP_API_URL || 'https://alandalus-booking-app.onrender.com/api';
 
 const BookingPage = () => {
-    // تجهيز قائمة التواريخ المتاحة خلال 60 يوم
     const availableDates = useMemo(() => {
         const days = [];
         for (let i = 0; i < 60; i++) { 
@@ -19,17 +17,22 @@ const BookingPage = () => {
         return days;
     }, []);
 
-    // حالة النموذج مع إضافة حقل المرحلة
     const [formData, setFormData] = useState({
-        facility: 'المسرح', section: 'بنات', datePart: availableDates[0].value, 
-        timePart: '08:00', activityName: '', duration: 1, stage: 'ابتدائي',
-        bookingType: 'داخلي', contactPhone: '', contactEmail: '' 
+        facility: 'المسرح', 
+        section: 'بنات', // الحقل الجديد المضاف
+        stage: 'ابتدائي', 
+        datePart: availableDates[0].value, 
+        timePart: '08:00', 
+        activityName: '', 
+        duration: 1, 
+        bookingType: 'داخلي', 
+        contactPhone: '', 
+        contactEmail: '' 
     });
 
     const [error, setError] = useState('');
     const [showSuccess, setShowSuccess] = useState(false);
 
-    // دالة معالجة الإرسال
     const handleSubmit = async (e) => {
         e.preventDefault();
         setError('');
@@ -56,8 +59,17 @@ const BookingPage = () => {
                 {showSuccess && <Alert variant="success" className="text-center">✅ تم الحجز بنجاح!</Alert>}
                 <Form onSubmit={handleSubmit}>
                     <Row className="g-3">
-                        {/* ✅ حقل المرحلة الجديد (تم وضعه في الأعلى ليسهل اختياره) */}
-                        <Col md={12}>
+                        {/* ✅ إضافة القسم والمرحلة جنباً إلى جنب */}
+                        <Col md={6}>
+                            <Form.Group className="mb-3">
+                                <Form.Label className="fw-bold">القسم</Form.Label>
+                                <Form.Select value={formData.section} onChange={(e) => setFormData({...formData, section: e.target.value})}>
+                                    <option value="بنات">بنات</option>
+                                    <option value="بنين">بنين</option>
+                                </Form.Select>
+                            </Form.Group>
+                        </Col>
+                        <Col md={6}>
                             <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">المرحلة</Form.Label>
                                 <Form.Select value={formData.stage} onChange={(e) => setFormData({...formData, stage: e.target.value})}>
@@ -65,12 +77,12 @@ const BookingPage = () => {
                                 </Form.Select>
                             </Form.Group>
                         </Col>
-                        {/* بقية الحقول */}
+
                         <Col md={6}>
                             <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">القاعة</Form.Label>
                                 <Form.Select value={formData.facility} onChange={(e) => setFormData({...formData, facility: e.target.value})}>
-                                    {['المسرح', 'مصادر التعلم', 'قاعة بلنسية', 'الصالة الرياضية بنات'].map(f => <option key={f} value={f}>{f}</option>)}
+                                    {['المسرح', 'مصادر التعلم', 'قاعة بلنسية', 'الصالة الرياضية بنات', 'الصالة الرياضية بنين'].map(f => <option key={f} value={f}>{f}</option>)}
                                 </Form.Select>
                             </Form.Group>
                         </Col>
@@ -80,7 +92,7 @@ const BookingPage = () => {
                                 <Form.Control required type="text" value={formData.activityName} onChange={(e) => setFormData({...formData, activityName: e.target.value})} placeholder="ورشة عمل..." />
                             </Form.Group>
                         </Col>
-                        {/* حقول الوقت والتاريخ المضافة */}
+
                         <Col md={6}>
                             <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">التاريخ المتاح</Form.Label>
@@ -101,6 +113,7 @@ const BookingPage = () => {
                                 <Form.Control type="number" min="1" max="8" value={formData.duration} onChange={(e) => setFormData({...formData, duration: e.target.value})} />
                             </Form.Group>
                         </Col>
+
                         <Col md={6}>
                             <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">الجوال (مطلوب للتأكيد)</Form.Label>
