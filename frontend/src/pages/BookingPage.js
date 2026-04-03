@@ -1,4 +1,3 @@
-// frontend/src/pages/BookingPage.js
 import React, { useState, useMemo } from 'react';
 import { Container, Card, Form, Button, Row, Col, Alert } from 'react-bootstrap';
 import axios from 'axios';
@@ -6,10 +5,9 @@ import moment from 'moment';
 import 'moment/locale/ar-sa'; 
 
 moment.locale('ar-sa'); 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_URL = process.env.REACT_APP_API_URL || 'https://alandalus-booking-app.onrender.com/api';
 
 const BookingPage = () => {
-    // تمديد الحجز لـ 60 يوماً مع ضمان الأداء
     const availableDates = useMemo(() => {
         const days = [];
         for (let i = 0; i < 60; i++) { 
@@ -20,10 +18,9 @@ const BookingPage = () => {
     }, []);
 
     const [formData, setFormData] = useState({
-        facility: 'المسرح', section: 'بنين', datePart: availableDates[0].value, 
+        facility: 'المسرح', section: 'بنات', datePart: availableDates[0].value, 
         timePart: '08:00', activityName: '', duration: 1, stage: 'ابتدائي',     
-        bookingType: 'داخلي', chairsNeeded: 0, microphonesNeeded: 1,
-        contactPhone: '', contactEmail: '' 
+        bookingType: 'داخلي', contactPhone: '', contactEmail: '' 
     });
 
     const [error, setError] = useState('');
@@ -34,39 +31,71 @@ const BookingPage = () => {
         setError('');
         const token = localStorage.getItem('token');
         try {
-            // دمج التاريخ والوقت بشكل صحيح
-            const payload = { ...formData, date: new Date(`${formData.datePart}T${formData.timePart}`) };
+            const payload = { 
+                ...formData, 
+                date: new Date(`${formData.datePart}T${formData.timePart}`) 
+            };
             await axios.post(`${API_URL}/bookings`, payload, {
                 headers: { 'x-auth-token': token, 'Content-Type': 'application/json' },
             });
             setShowSuccess(true);
         } catch (err) {
-            // عرض سبب الخطأ الحقيقي القادم من السيرفر
-            setError(err.response?.data?.message || 'حدث خطأ في الاتصال، يرجى المحاولة مرة أخرى');
+            setError(err.response?.data?.message || 'حدث خطأ في الاتصال');
         }
     };
 
     return (
         <Container className="mt-4">
             <Card className="shadow-lg p-4 border-0 rounded-4">
-                <h3 className="text-center text-primary fw-bold mb-4">نموذج حجز قاعة جديدة</h3>
+                <h3 className="text-center text-primary fw-bold mb-4">نموذج حجز قاعة جديدة - مدارس الأندلس</h3>
                 {error && <Alert variant="danger" className="text-center">{error}</Alert>}
                 {showSuccess && <Alert variant="success" className="text-center">✅ تم الحجز بنجاح!</Alert>}
                 <Form onSubmit={handleSubmit}>
-                   {/* تم تبسيط النموذج لضمان إرسال الحقول الإجبارية بنجاح */}
                     <Row className="g-3">
                         <Col md={6}>
-                            <Form.Group className="mb-2">
-                                <Form.Label className="small fw-bold">القاعة</Form.Label>
-                                <Form.Select name="facility" value={formData.facility} onChange={(e) => setFormData({...formData, facility: e.target.value})}>
-                                    {['المسرح', 'مصادر التعلم', 'قاعة بلنسية', 'الصالة الرياضية بنات', 'الصالة الرياضية بنين'].map(f => <option key={f} value={f}>{f}</option>)}
+                            <Form.Group className="mb-3">
+                                <Form.Label className="fw-bold">القاعة</Form.Label>
+                                <Form.Select value={formData.facility} onChange={(e) => setFormData({...formData, facility: e.target.value})}>
+                                    {['المسرح', 'مصادر التعلم', 'قاعة بلنسية', 'الصالة الرياضية بنات'].map(f => <option key={f} value={f}>{f}</option>)}
                                 </Form.Select>
                             </Form.Group>
                         </Col>
                         <Col md={6}>
-                            <Form.Group className="mb-2">
-                                <Form.Label className="small fw-bold">الجوال (مطلوب للتأكيد)</Form.Label>
-                                <Form.Control type="tel" value={formData.contactPhone} onChange={(e) => setFormData({...formData, contactPhone: e.target.value})} required placeholder="05xxxxxxxx" />
+                            <Form.Group className="mb-3">
+                                <Form.Label className="fw-bold">اسم الفعالية</Form.Label>
+                                <Form.Control required type="text" value={formData.activityName} onChange={(e) => setFormData({...formData, activityName: e.target.value})} placeholder="مثلاً: ورشة عمل الروبوت" />
+                            </Form.Group>
+                        </Col>
+                        <Col md={6}>
+                            <Form.Group className="mb-3">
+                                <Form.Label className="fw-bold">التاريخ المتاح (خلال 60 يوم)</Form.Label>
+                                <Form.Select value={formData.datePart} onChange={(e) => setFormData({...formData, datePart: e.target.value})}>
+                                    {availableDates.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
+                                </Form.Select>
+                            </Form.Group>
+                        </Col>
+                        <Col md={3}>
+                            <Form.Group className="mb-3">
+                                <Form.Label className="fw-bold">وقت البدء</Form.Label>
+                                <Form.Control type="time" value={formData.timePart} onChange={(e) => setFormData({...formData, timePart: e.target.value})} />
+                            </Form.Group>
+                        </Col>
+                        <Col md={3}>
+                            <Form.Group className="mb-3">
+                                <Form.Label className="fw-bold">المدة (ساعات)</Form.Label>
+                                <Form.Control type="number" min="1" max="8" value={formData.duration} onChange={(e) => setFormData({...formData, duration: e.target.value})} />
+                            </Form.Group>
+                        </Col>
+                        <Col md={6}>
+                            <Form.Group className="mb-3">
+                                <Form.Label className="fw-bold">الجوال (مطلوب للتأكيد)</Form.Label>
+                                <Form.Control required type="tel" value={formData.contactPhone} onChange={(e) => setFormData({...formData, contactPhone: e.target.value})} placeholder="05xxxxxxxx" />
+                            </Form.Group>
+                        </Col>
+                        <Col md={6}>
+                            <Form.Group className="mb-3">
+                                <Form.Label className="fw-bold">البريد الإلكتروني</Form.Label>
+                                <Form.Control required type="email" value={formData.contactEmail} onChange={(e) => setFormData({...formData, contactEmail: e.target.value})} placeholder="email@example.com" />
                             </Form.Group>
                         </Col>
                     </Row>
