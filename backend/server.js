@@ -6,19 +6,21 @@ const dotenv = require('dotenv');
 dotenv.config();
 const app = express();
 
-// ✅ تفعيل الـ CORS لقبول الطلبات من رابط Vercel الخاص بكِ
+// ✅ أهم سطر لكسر الحلقة: السماح لـ Vercel بالوصول للسيرفر
 app.use(cors()); 
 app.use(express.json());
 
-// 1. الاتصال بقاعدة البيانات الجديدة
+// 1. الاتصال بالقاعدة الجديدة
 mongoose.connect(process.env.MONGO_URI)
     .then(() => console.log('✅ Connected to MongoDB Atlas'))
     .catch(err => console.error('❌ Database Error:', err.message));
 
-// 2. تعريف المسارات (تأكدي من مطابقة الأسماء لملفاتك)
+// 2. ربط المسارات بأسماء ملفاتك الصحيحة
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/bookings', require('./routes/bookingRoutes'));
 app.use('/api/reports', require('./routes/reportRoutes'));
 
+app.get('/', (req, res) => res.send('API is Live!'));
+
 const PORT = process.env.PORT || 10000;
-app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, '0.0.0.0', () => console.log(`🚀 Server on port ${PORT}`));
