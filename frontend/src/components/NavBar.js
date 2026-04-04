@@ -7,7 +7,7 @@ import '../custom.css';
 const NavBar = ({ isAuthenticated, role, handleLogout }) => {
     const navigate = useNavigate();
 
-    // جلب بيانات المستخدم
+    // جلب بيانات المستخدم لعرض الاسم
     const userString = localStorage.getItem('user');
     const user = userString ? JSON.parse(userString) : null;
     const username = user ? user.username : '';
@@ -18,53 +18,55 @@ const NavBar = ({ isAuthenticated, role, handleLogout }) => {
     };
 
     return (
-        <Navbar expand="lg" dir="rtl" className="navbar-custom mb-4 py-3">
-            <Container fluid className="px-lg-5"> {/* fluid لزيادة عرض الشريط */}
-                
-                {/* 1. الجهة اليمنى: الشعار واسم النظام */}
-                <Navbar.Brand as={Link} to="/" className="d-flex align-items-center">
+        <Navbar expand="lg" dir="rtl" className="navbar-custom mb-4 py-3 shadow-sm">
+            <Container fluid className="px-lg-5">
+                {/* 1. شعار المدرسة في أقصى اليمين */}
+                <Navbar.Brand as={Link} to="/" className="d-flex align-items-center me-0">
                     <img 
                         src="/الشعار-أبيض.png" 
                         alt="شعار المدرسة" 
                         style={{ height: '50px', marginLeft: '10px' }} 
                     />
-                    <span className="fw-bold text-white shadow-sm">نظام حجز قاعات الأندلس</span>
+                    <span className="fw-bold text-white d-none d-sm-inline">نظام حجز قاعات الأندلس</span>
                 </Navbar.Brand>
                 
                 <Navbar.Toggle aria-controls="basic-navbar-nav" />
-                <Navbar.Collapse id="basic-navbar-nav">
-                    
+                
+                <Navbar.Collapse id="basic-navbar-nav" className="justify-content-between">
                     {/* 2. الروابط المركزية */}
-                    <Nav className="me-3">
+                    <Nav className="mx-auto fw-bold">
                         {isAuthenticated && (
                             <>
-                                <Nav.Link as={Link} to="/" className="fw-bold px-3 text-white">الرئيسية</Nav.Link>
-                                <Nav.Link as={Link} to="/booking" className="fw-bold px-3 text-white">حجز جديد</Nav.Link>
-                                <Nav.Link as={Link} to="/my-bookings" className="fw-bold px-3 text-white">حجوزاتي</Nav.Link>
+                                <Nav.Link as={Link} to="/" className="text-white px-3">الرئيسية</Nav.Link>
+                                <Nav.Link as={Link} to="/booking" className="text-white px-3">حجز جديد</Nav.Link>
+                                <Nav.Link as={Link} to="/my-bookings" className="text-white px-3">حجوزاتي</Nav.Link>
                             </>
+                        )}
+                        {isAuthenticated && role === 'Admin' && (
+                            <Nav.Link as={Link} to="/admin/reports" className="text-white px-3">تقارير المسؤول</Nav.Link>
                         )}
                     </Nav>
 
-                    {/* ✅ 3. الإزاحة القصوى لليسار باستخدام ms-auto */}
-                    <Nav className="ms-auto d-flex align-items-center">
+                    {/* 3. حاوية التحكم في أقصى اليسار */}
+                    <Nav className="d-flex align-items-center ms-0">
                         {isAuthenticated ? (
-                            <>
-                                {/* عرض اسم المستخدم */}
-                                <span className="text-white fw-bold d-flex align-items-center pe-3 border-end" style={{ fontSize: '0.95rem' }}>
-                                    👤 {username}
-                                </span>
-                                
-                                {/* زر تسجيل الخروج مع إزاحة كبيرة إضافية */}
+                            <div className="d-flex align-items-center">
+                                {/* زر تسجيل الخروج في الطرف الأيسر تماماً */}
                                 <Button 
                                     variant="outline-light" 
                                     onClick={handleLogoutClick} 
-                                    className="fw-bold rounded-pill ms-5 px-4 shadow-sm" 
+                                    className="fw-bold rounded-pill px-4 shadow-sm order-1" 
                                 >
                                     تسجيل الخروج
                                 </Button>
-                            </>
+
+                                {/* اسم المستخدم يظهر بجانب الزر من الداخل */}
+                                <span className="text-white fw-bold me-4 border-end pe-3 order-2" style={{ fontSize: '0.95rem' }}>
+                                    👤 {username}
+                                </span>
+                            </div>
                         ) : (
-                            <Button variant="outline-light" as={Link} to="/login" className="fw-bold rounded-pill px-4 ms-auto">
+                            <Button variant="outline-light" as={Link} to="/login" className="fw-bold rounded-pill px-4">
                                 تسجيل الدخول
                             </Button>
                         )}
