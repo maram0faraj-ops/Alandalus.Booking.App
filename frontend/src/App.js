@@ -1,5 +1,4 @@
 // frontend/src/App.js
-
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import NavBar from './components/NavBar';
@@ -51,22 +50,20 @@ function App() {
         setIsLoading(false); 
     }, []);
 
-    // ✅ دالة تسجيل الدخول المحدثة لحفظ بيانات المستخدم
+    // ✅ التعديل: تمرير وحفظ بيانات المستخدم بالكامل
     const handleLogin = (token, role, user) => {
         localStorage.setItem('token', token);
         if (role) localStorage.setItem('role', role);
-        // حفظ كائن المستخدم كاملاً لكي يقرأ منه NavBar الاسم
-        if (user) localStorage.setItem('user', JSON.stringify(user)); 
+        if (user) localStorage.setItem('user', JSON.stringify(user)); // حفظ الاسم والرتبة
         
         setIsAuthenticated(true);
         setRole(role);
     };
 
-    // ✅ دالة تسجيل الخروج المحدثة لتنظيف كافة البيانات
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('role');
-        localStorage.removeItem('user'); // حذف بيانات المستخدم عند الخروج
+        localStorage.removeItem('user'); // تنظيف بيانات المستخدم
         setIsAuthenticated(false);
         setRole(null);
     };
@@ -77,40 +74,12 @@ function App() {
         <Router>
             <Layout isAuthenticated={isAuthenticated} role={role} handleLogout={handleLogout}>
                 <Routes>
-                    <Route 
-                        path="/" 
-                        element={isAuthenticated ? <HomePage /> : <Navigate to="/login" replace />} 
-                    />
-                    
+                    <Route path="/" element={isAuthenticated ? <HomePage /> : <Navigate to="/login" replace />} />
                     <Route path="/login" element={<LoginPage handleLogin={handleLogin} />} />
                     <Route path="/register" element={<RegisterPage />} />
-                    
-                    <Route 
-                        path="/booking" 
-                        element={
-                            <PrivateRoute isAuthenticated={isAuthenticated}>
-                                <BookingPage /> 
-                            </PrivateRoute>
-                        } 
-                    />
-                    
-                    <Route 
-                        path="/my-bookings" 
-                        element={
-                            <PrivateRoute isAuthenticated={isAuthenticated}>
-                                <MyBookingsPage /> 
-                            </PrivateRoute>
-                        } 
-                    />
-                    
-                    <Route 
-                        path="/admin/reports" 
-                        element={
-                            <PrivateRoute isAuthenticated={isAuthenticated} requiredRole="Admin" userRole={role}>
-                                <ReportsPage />
-                            </PrivateRoute>
-                        } 
-                    />
+                    <Route path="/booking" element={<PrivateRoute isAuthenticated={isAuthenticated}><BookingPage /></PrivateRoute>} />
+                    <Route path="/my-bookings" element={<PrivateRoute isAuthenticated={isAuthenticated}><MyBookingsPage /></PrivateRoute>} />
+                    <Route path="/admin/reports" element={<PrivateRoute isAuthenticated={isAuthenticated} requiredRole="Admin" userRole={role}><ReportsPage /></PrivateRoute>} />
                 </Routes>
             </Layout>
         </Router>
