@@ -4,10 +4,12 @@ import axios from 'axios';
 import moment from 'moment';
 import 'moment/locale/ar-sa'; 
 
+// إعدادات اللغة العربية والوقت لمدارس الأندلس
 moment.locale('ar-sa'); 
 const API_URL = process.env.REACT_APP_API_URL || 'https://alandalus-booking-app.onrender.com/api';
 
 const BookingPage = () => {
+    // تجهيز قائمة التواريخ المتاحة خلال 60 يوم
     const availableDates = useMemo(() => {
         const days = [];
         for (let i = 0; i < 60; i++) { 
@@ -17,10 +19,12 @@ const BookingPage = () => {
         return days;
     }, []);
 
+    // حالة النموذج مع كافة الحقول المحدثة
     const [formData, setFormData] = useState({
         facility: 'المسرح', 
         section: 'بنات', 
         stage: 'الابتدائي', 
+        bookingType: 'داخلي', // إضافة نوع الحجز
         datePart: availableDates[0].value, 
         timePart: '08:00', 
         activityName: '', 
@@ -39,13 +43,12 @@ const BookingPage = () => {
         const token = localStorage.getItem('token');
         
         try {
-            // ✅ إضافة الحقول المطلوبة تقنياً لنجاح الاتصال بالسيرفر
+            // دمج التاريخ والوقت وإضافة الحقول التقنية المطلوبة للسيرفر
             const payload = { 
                 ...formData, 
-                bookingType: 'داخلي', 
+                date: new Date(`${formData.datePart}T${formData.timePart}`),
                 chairsNeeded: 0,
-                tablesNeeded: 0,
-                date: new Date(`${formData.datePart}T${formData.timePart}`) 
+                tablesNeeded: 0
             };
             
             await axios.post(`${API_URL}/bookings`, payload, {
@@ -56,9 +59,8 @@ const BookingPage = () => {
             });
             
             setShowSuccess(true);
-            window.scrollTo(0, 0);
+            window.scrollTo(0, 0); // العودة للأعلى لرؤية رسالة النجاح
         } catch (err) {
-            // إظهار سبب الرفض الحقيقي من السيرفر
             setError(err.response?.data?.message || 'حدث خطأ في الاتصال، يرجى المحاولة لاحقاً');
         }
     };
@@ -73,8 +75,20 @@ const BookingPage = () => {
                 
                 <Form onSubmit={handleSubmit}>
                     <Row className="g-3">
+                        {/* 1. نوع الحجز (داخلي أو خارجي) */}
+                        <Col md={12}>
+                            <Form.Group className="mb-3">
+                                <Form.Label className="fw-bold text-secondary">نوع الحجز</Form.Label>
+                                <Form.Select value={formData.bookingType} onChange={(e) => setFormData({...formData, bookingType: e.target.value})}>
+                                    <option value="داخلي">داخلي (فعالية مدرسية)</option>
+                                    <option value="خارجي">خارجي (جهة خارجية)</option>
+                                </Form.Select>
+                            </Form.Group>
+                        </Col>
+
+                        {/* 2. القسم والمرحلة */}
                         <Col md={6}>
-                            <Form.Group>
+                            <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">القسم</Form.Label>
                                 <Form.Select value={formData.section} onChange={(e) => setFormData({...formData, section: e.target.value})}>
                                     <option value="بنات">بنات</option>
@@ -83,7 +97,7 @@ const BookingPage = () => {
                             </Form.Group>
                         </Col>
                         <Col md={6}>
-                            <Form.Group>
+                            <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">المرحلة</Form.Label>
                                 <Form.Select value={formData.stage} onChange={(e) => setFormData({...formData, stage: e.target.value})}>
                                     <option value="رياض أطفال">رياض أطفال</option>
@@ -96,8 +110,9 @@ const BookingPage = () => {
                             </Form.Group>
                         </Col>
 
+                        {/* 3. القاعة واسم الفعالية */}
                         <Col md={6}>
-                            <Form.Group>
+                            <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">القاعة</Form.Label>
                                 <Form.Select value={formData.facility} onChange={(e) => setFormData({...formData, facility: e.target.value})}>
                                     {['المسرح', 'مصادر التعلم', 'قاعة بلنسية', 'الصالة الرياضية بنات', 'الصالة الرياضية بنين'].map(f => <option key={f} value={f}>{f}</option>)}
@@ -105,14 +120,15 @@ const BookingPage = () => {
                             </Form.Group>
                         </Col>
                         <Col md={6}>
-                            <Form.Group>
+                            <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">اسم الفعالية</Form.Label>
-                                <Form.Control required type="text" value={formData.activityName} onChange={(e) => setFormData({...formData, activityName: e.target.value})} placeholder="ورشة عمل..." />
+                                <Form.Control required type="text" value={formData.activityName} onChange={(e) => setFormData({...formData, activityName: e.target.value})} placeholder="ورشة عمل، مجلس أمهات..." />
                             </Form.Group>
                         </Col>
 
+                        {/* 4. التاريخ والوقت */}
                         <Col md={6}>
-                            <Form.Group>
+                            <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">التاريخ المتاح</Form.Label>
                                 <Form.Select value={formData.datePart} onChange={(e) => setFormData({...formData, datePart: e.target.value})}>
                                     {availableDates.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
@@ -120,32 +136,33 @@ const BookingPage = () => {
                             </Form.Group>
                         </Col>
                         <Col md={3}>
-                            <Form.Group>
+                            <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">وقت البدء</Form.Label>
                                 <Form.Control type="time" value={formData.timePart} onChange={(e) => setFormData({...formData, timePart: e.target.value})} />
                             </Form.Group>
                         </Col>
                         <Col md={3}>
-                            <Form.Group>
+                            <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">المدة (ساعات)</Form.Label>
                                 <Form.Control type="number" min="1" max="8" value={formData.duration} onChange={(e) => setFormData({...formData, duration: e.target.value})} />
                             </Form.Group>
                         </Col>
 
+                        {/* 5. بيانات التواصل */}
                         <Col md={6}>
-                            <Form.Group>
-                                <Form.Label className="fw-bold">الجوال (مطلوب للتأكيد)</Form.Label>
+                            <Form.Group className="mb-3">
+                                <Form.Label className="fw-bold">الجوال (للتواصل)</Form.Label>
                                 <Form.Control required type="tel" value={formData.contactPhone} onChange={(e) => setFormData({...formData, contactPhone: e.target.value})} placeholder="05xxxxxxxx" />
                             </Form.Group>
                         </Col>
                         <Col md={6}>
-                            <Form.Group>
+                            <Form.Group className="mb-3">
                                 <Form.Label className="fw-bold">البريد الإلكتروني</Form.Label>
-                                <Form.Control required type="email" value={formData.contactEmail} onChange={(e) => setFormData({...formData, contactEmail: e.target.value})} placeholder="email@example.com" />
+                                <Form.Control required type="email" value={formData.contactEmail} onChange={(e) => setFormData({...formData, contactEmail: e.target.value})} placeholder="email@as.edu.sa" />
                             </Form.Group>
                         </Col>
                     </Row>
-                    <Button variant="primary" size="lg" type="submit" className="w-100 mt-4 fw-bold shadow-sm">إرسال طلب الحجز</Button>
+                    <Button variant="primary" size="lg" type="submit" className="w-100 mt-4 fw-bold shadow-sm rounded-3">إرسال طلب الحجز</Button>
                 </Form>
             </Card>
         </Container>
