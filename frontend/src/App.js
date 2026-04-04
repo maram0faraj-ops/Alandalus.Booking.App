@@ -9,15 +9,13 @@ import './custom.css';
 // استيراد الصفحات
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
-import BookingPage from './pages/BookingPage'; // هذه الصفحة هي التي ستحتاج للتأكد من قيود الـ 60 يوماً في التقويم
+import BookingPage from './pages/BookingPage'; 
 import ReportsPage from './pages/ReportsPage';
 import MyBookingsPage from './pages/MyBookingsPage'; 
 import RegisterPage from './pages/RegisterPage'; 
 
-// مكون Layout للتحكم في ظهور الشريط العلوي
 const Layout = ({ children, isAuthenticated, role, handleLogout }) => {
     const location = useLocation();
-    // قائمة المسارات التي لا نريد إظهار الشريط العلوي فيها
     const hideNavBarRoutes = ['/login', '/register'];
     const showNavBar = !hideNavBarRoutes.includes(location.pathname);
 
@@ -42,7 +40,6 @@ function App() {
     const [role, setRole] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    // التحقق من وجود التوكن والدور عند تحميل التطبيق
     useEffect(() => {
         const token = localStorage.getItem('token');
         const userRole = localStorage.getItem('role');
@@ -54,18 +51,22 @@ function App() {
         setIsLoading(false); 
     }, []);
 
-    // دالة تسجيل الدخول
-    const handleLogin = (token, role) => {
+    // ✅ دالة تسجيل الدخول المحدثة لحفظ بيانات المستخدم
+    const handleLogin = (token, role, user) => {
         localStorage.setItem('token', token);
         if (role) localStorage.setItem('role', role);
+        // حفظ كائن المستخدم كاملاً لكي يقرأ منه NavBar الاسم
+        if (user) localStorage.setItem('user', JSON.stringify(user)); 
+        
         setIsAuthenticated(true);
         setRole(role);
     };
 
-    // دالة تسجيل الخروج
+    // ✅ دالة تسجيل الخروج المحدثة لتنظيف كافة البيانات
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('role');
+        localStorage.removeItem('user'); // حذف بيانات المستخدم عند الخروج
         setIsAuthenticated(false);
         setRole(null);
     };
@@ -76,7 +77,6 @@ function App() {
         <Router>
             <Layout isAuthenticated={isAuthenticated} role={role} handleLogout={handleLogout}>
                 <Routes>
-                    {/* التوجيه للصفحة الرئيسية أو صفحة الدخول */}
                     <Route 
                         path="/" 
                         element={isAuthenticated ? <HomePage /> : <Navigate to="/login" replace />} 
@@ -85,7 +85,6 @@ function App() {
                     <Route path="/login" element={<LoginPage handleLogin={handleLogin} />} />
                     <Route path="/register" element={<RegisterPage />} />
                     
-                    {/* مسار صفحة الحجز (المحمية) */}
                     <Route 
                         path="/booking" 
                         element={
@@ -95,7 +94,6 @@ function App() {
                         } 
                     />
                     
-                    {/* مسار حجوزاتي */}
                     <Route 
                         path="/my-bookings" 
                         element={
@@ -105,7 +103,6 @@ function App() {
                         } 
                     />
                     
-                    {/* مسار التقارير (للمدير فقط) */}
                     <Route 
                         path="/admin/reports" 
                         element={
