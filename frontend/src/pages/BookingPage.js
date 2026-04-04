@@ -19,12 +19,12 @@ const BookingPage = () => {
         return days;
     }, []);
 
-    // حالة النموذج مع كافة الحقول المحدثة
+    // حالة النموذج مع إضافة نوع الحجز
     const [formData, setFormData] = useState({
         facility: 'المسرح', 
         section: 'بنات', 
         stage: 'الابتدائي', 
-        bookingType: 'داخلي', // إضافة نوع الحجز
+        bookingType: 'داخلي', // الحقل الجديد المضاف
         datePart: availableDates[0].value, 
         timePart: '08:00', 
         activityName: '', 
@@ -43,7 +43,7 @@ const BookingPage = () => {
         const token = localStorage.getItem('token');
         
         try {
-            // دمج التاريخ والوقت وإضافة الحقول التقنية المطلوبة للسيرفر
+            // دمج البيانات وإرسالها للسيرفر
             const payload = { 
                 ...formData, 
                 date: new Date(`${formData.datePart}T${formData.timePart}`),
@@ -59,7 +59,7 @@ const BookingPage = () => {
             });
             
             setShowSuccess(true);
-            window.scrollTo(0, 0); // العودة للأعلى لرؤية رسالة النجاح
+            window.scrollTo(0, 0);
         } catch (err) {
             setError(err.response?.data?.message || 'حدث خطأ في الاتصال، يرجى المحاولة لاحقاً');
         }
@@ -68,18 +68,21 @@ const BookingPage = () => {
     return (
         <Container className="mt-4 mb-5">
             <Card className="shadow-lg p-4 border-0 rounded-4">
-                <h3 className="text-center text-primary fw-bold mb-4">نموذج حجز قاعة جديدة - مدارس الأندلس</h3>
+                {/* تم حذف عنوان النموذج هنا بناءً على طلبك */}
                 
                 {error && <Alert variant="danger" className="text-center fw-bold">{error}</Alert>}
                 {showSuccess && <Alert variant="success" className="text-center fw-bold">✅ تم إرسال طلب الحجز بنجاح!</Alert>}
                 
                 <Form onSubmit={handleSubmit}>
                     <Row className="g-3">
-                        {/* 1. نوع الحجز (داخلي أو خارجي) */}
+                        {/* 1. قائمة منسدلة لنوع الحجز */}
                         <Col md={12}>
                             <Form.Group className="mb-3">
-                                <Form.Label className="fw-bold text-secondary">نوع الحجز</Form.Label>
-                                <Form.Select value={formData.bookingType} onChange={(e) => setFormData({...formData, bookingType: e.target.value})}>
+                                <Form.Label className="fw-bold">نوع الحجز</Form.Label>
+                                <Form.Select 
+                                    value={formData.bookingType} 
+                                    onChange={(e) => setFormData({...formData, bookingType: e.target.value})}
+                                >
                                     <option value="داخلي">داخلي (فعالية مدرسية)</option>
                                     <option value="خارجي">خارجي (جهة خارجية)</option>
                                 </Form.Select>
@@ -129,7 +132,7 @@ const BookingPage = () => {
                         {/* 4. التاريخ والوقت */}
                         <Col md={6}>
                             <Form.Group className="mb-3">
-                                <Form.Label className="fw-bold">التاريخ المتاح</Form.Label>
+                                <Form.Label className="fw-bold">التاريخ المتاح (خلال 60 يوم)</Form.Label>
                                 <Form.Select value={formData.datePart} onChange={(e) => setFormData({...formData, datePart: e.target.value})}>
                                     {availableDates.map(d => <option key={d.value} value={d.value}>{d.label}</option>)}
                                 </Form.Select>
@@ -162,7 +165,7 @@ const BookingPage = () => {
                             </Form.Group>
                         </Col>
                     </Row>
-                    <Button variant="primary" size="lg" type="submit" className="w-100 mt-4 fw-bold shadow-sm rounded-3">إرسال طلب الحجز</Button>
+                    <Button variant="primary" size="lg" type="submit" className="w-100 mt-4 fw-bold shadow-sm">إرسال طلب الحجز</Button>
                 </Form>
             </Card>
         </Container>
