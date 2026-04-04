@@ -1,10 +1,11 @@
+// backend/models/Booking.js
 const mongoose = require('mongoose');
 
 const bookingSchema = new mongoose.Schema({
     facility: {
         type: String,
         required: true,
-        enum: ['المسرح', 'مصادر التعلم', 'قاعة بلنسية', 'الصالة الرياضية بنات', 'الصالة الرياضية بنين']
+        // تأكدي من مطابقة هذه الأسماء لما في القائمة المنسدلة في الواجهة
     },
     date: {
         type: Date,
@@ -20,24 +21,12 @@ const bookingSchema = new mongoose.Schema({
     },
     section: {
         type: String,
-        required: true,
-        enum: ['بنين', 'بنات']
+        required: true // يقبل "بنين" أو "بنات"
     },
     stage: {
         type: String,
-        required: true,
-        // ✅ قائمة موسعة لتقبل جميع الصيغ المحتملة وتمنع أخطاء التحقق
-        enum: [
-            'رياض الأطفال', 'رياض أطفال', 
-            'طفولة مبكرة', 
-            'ابتدائي', 'المرحلة الابتدائية',
-            'متوسط', 'المرحلة المتوسطة',
-            'ثانوي', 'المرحلة الثانوية',
-            'إشراف تعليمي', 
-            'إدارة عامة'
-        ]
+        required: true // يقبل أي نص للمرحلة لمنع أخطاء الـ Validation
     },
-    // ✅ حقول التواصل الجديدة (إجبارية)
     contactPhone: {
         type: String,
         required: true 
@@ -48,21 +37,7 @@ const bookingSchema = new mongoose.Schema({
     },
     bookingType: {
         type: String,
-        required: true,
-        enum: ['داخلي', 'خارجي']
-    },
-    externalEntityName: {
-        type: String,
-        // مطلوب فقط إذا كان النوع خارجي
-        required: function() { return this.bookingType === 'خارجي'; }
-    },
-    chairsNeeded: {
-        type: Number,
-        default: 0
-    },
-    tablesNeeded: {
-        type: Number,
-        default: 0
+        default: 'داخلي' // جعلناه اختيارياً لتسهيل الحفظ
     },
     bookedBy: {
         type: mongoose.Schema.Types.ObjectId,
@@ -73,11 +48,7 @@ const bookingSchema = new mongoose.Schema({
         type: String,
         enum: ['pending', 'approved', 'rejected', 'cancelled'],
         default: 'pending'
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
     }
-});
+}, { timestamps: true }); // يضيف تاريخ الإنشاء والتحديث تلقائياً
 
 module.exports = mongoose.model('Booking', bookingSchema);
