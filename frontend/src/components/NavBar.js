@@ -3,10 +3,14 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Navbar, Nav, Container, Button } from 'react-bootstrap';
-import '../custom.css'; // استيراد ملف التنسيق المخصص
+import '../custom.css'; 
 
 const NavBar = ({ isAuthenticated, role, handleLogout }) => {
     const navigate = useNavigate();
+
+    // 1. استخراج بيانات المستخدم من localStorage لعرض الاسم
+    const user = JSON.parse(localStorage.getItem('user'));
+    const username = user ? user.username : '';
 
     const handleLogoutClick = () => {
         handleLogout();
@@ -22,16 +26,15 @@ const NavBar = ({ isAuthenticated, role, handleLogout }) => {
                         src="/الشعار-أبيض.png" 
                         alt="شعار المدرسة" 
                         className="d-inline-block align-top"
-                        style={{ height: '50px', marginLeft: '10px' }} // تعديل المسافة
+                        style={{ height: '50px', marginLeft: '10px' }} 
                     />
-                    {/* إضافة fw-bold لجعله عريضاً */}
                     <span className="fw-bold" style={{ fontSize: '1.2rem' }}>نظام حجز قاعات الأندلس</span>
                 </Navbar.Brand>
                 
                 <Navbar.Toggle aria-controls="basic-navbar-nav" />
                 <Navbar.Collapse id="basic-navbar-nav">
                     
-                    {/* الروابط */}
+                    {/* الروابط المركزية */}
                     <Nav className="me-auto" style={{ textAlign: 'right' }}>
                         {isAuthenticated && (
                             <>
@@ -46,14 +49,20 @@ const NavBar = ({ isAuthenticated, role, handleLogout }) => {
                         )}
                     </Nav>
 
-                    {/* الأزرار */}
-                    <Nav>
+                    {/* الأزرار واسم المستخدم */}
+                    <Nav className="d-flex align-items-center">
                         {isAuthenticated ? (
-                            <Button variant="outline-light" onClick={handleLogoutClick} className="fw-bold">
-                                تسجيل الخروج
-                            </Button>
+                            <>
+                                {/* ✅ إضافة اسم المستخدم هنا */}
+                                <span className="text-white me-3 fw-bold border-start ps-3" style={{ fontSize: '0.95rem' }}>
+                                    👤 {username}
+                                </span>
+                                <Button variant="outline-light" onClick={handleLogoutClick} className="fw-bold rounded-pill px-3">
+                                    تسجيل الخروج
+                                </Button>
+                            </>
                         ) : (
-                            <Button variant="outline-light" as={Link} to="/login" className="fw-bold">
+                            <Button variant="outline-light" as={Link} to="/login" className="fw-bold rounded-pill px-3">
                                 تسجيل الدخول
                             </Button>
                         )}
