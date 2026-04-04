@@ -8,7 +8,7 @@ import '../custom.css';
 const NavBar = ({ isAuthenticated, role, handleLogout }) => {
     const navigate = useNavigate();
 
-    // استخراج بيانات المستخدم لعرض الاسم
+    // 1. جلب بيانات المستخدم لعرض الاسم بوضوح
     const userString = localStorage.getItem('user');
     const user = userString ? JSON.parse(userString) : null;
     const username = user ? user.username : '';
@@ -50,18 +50,20 @@ const NavBar = ({ isAuthenticated, role, handleLogout }) => {
                         )}
                     </Nav>
 
-                    {/* أزرار تسجيل الخروج واسم المستخدم */}
+                    {/* ✅ الأزرار والاسم مع تعديل الإزاحة لليسار */}
                     <Nav className="d-flex align-items-center">
                         {isAuthenticated ? (
                             <>
-                                <span className="text-white fw-bold pe-3 border-end" style={{ fontSize: '0.95rem' }}>
+                                {/* اسم المستخدم مع مسافة على اليمين */}
+                                <span className="text-white fw-bold ms-3" style={{ fontSize: '0.95rem' }}>
                                     👤 {username}
                                 </span>
-                                {/* ✅ إضافة ms-3 لإزاحة الزر لليسار قليلاً عن الاسم */}
+                                
+                                {/* زر تسجيل الخروج مع إزاحة إضافية لليسار (me-3) */}
                                 <Button 
                                     variant="outline-light" 
                                     onClick={handleLogoutClick} 
-                                    className="fw-bold rounded-pill ms-3" 
+                                    className="fw-bold rounded-pill me-3" 
                                 >
                                     تسجيل الخروج
                                 </Button>
