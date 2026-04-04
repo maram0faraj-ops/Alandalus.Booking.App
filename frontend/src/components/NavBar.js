@@ -8,7 +8,7 @@ import '../custom.css';
 const NavBar = ({ isAuthenticated, role, handleLogout }) => {
     const navigate = useNavigate();
 
-    // 1. استدعاء بيانات المستخدم لعرض الاسم بجانب زر الخروج
+    // استخراج بيانات المستخدم لعرض الاسم
     const userString = localStorage.getItem('user');
     const user = userString ? JSON.parse(userString) : null;
     const username = user ? user.username : '';
@@ -50,19 +50,24 @@ const NavBar = ({ isAuthenticated, role, handleLogout }) => {
                         )}
                     </Nav>
 
-                    {/* ✅ عرض اسم المستخدم هنا */}
+                    {/* أزرار تسجيل الخروج واسم المستخدم */}
                     <Nav className="d-flex align-items-center">
                         {isAuthenticated ? (
                             <>
-                                <span className="text-white me-3 fw-bold border-start ps-3" style={{ fontSize: '0.95rem' }}>
+                                <span className="text-white fw-bold pe-3 border-end" style={{ fontSize: '0.95rem' }}>
                                     👤 {username}
                                 </span>
-                                <Button variant="outline-light" onClick={handleLogoutClick} className="fw-bold rounded-pill">
+                                {/* ✅ إضافة ms-3 لإزاحة الزر لليسار قليلاً عن الاسم */}
+                                <Button 
+                                    variant="outline-light" 
+                                    onClick={handleLogoutClick} 
+                                    className="fw-bold rounded-pill ms-3" 
+                                >
                                     تسجيل الخروج
                                 </Button>
                             </>
                         ) : (
-                            <Button variant="outline-light" as={Link} to="/login" className="fw-bold rounded-pill">
+                            <Button variant="outline-light" as={Link} to="/login" className="fw-bold rounded-pill px-3">
                                 تسجيل الدخول
                             </Button>
                         )}
