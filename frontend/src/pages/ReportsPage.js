@@ -1,12 +1,12 @@
 // frontend/src/pages/ReportsPage.js
 
 import React, { useEffect, useState } from 'react';
-import { Container, Card, Alert, Table, Form, Row, Col, Badge } from 'react-bootstrap';
+import { Container, Card, Alert, Table, Form, Row, Col, Badge, Spinner } from 'react-bootstrap';
 import axios from 'axios';
 import moment from 'moment';
-import '../custom.css'; // استيراد التنسيقات
+import '../custom.css'; 
 
-const API_URL = process.env.REACT_APP_API_URL;
+const API_URL = process.env.REACT_APP_API_URL || 'https://alandalus-booking-app.vercel.app/api';
 
 const ReportsPage = () => {
     const [bookings, setBookings] = useState([]);
@@ -17,7 +17,6 @@ const ReportsPage = () => {
     const [filterSection, setFilterSection] = useState('الكل');
     const [filterStage, setFilterStage] = useState('الكل');
 
-    // قائمة الخيارات يجب أن تكون مطابقة لما تم تحديده في BookingPage.js
     const facilities = ['الكل', 'المسرح', 'مصادر التعلم', 'قاعة بلنسية', 'الصالة الرياضية بنات', 'الصالة الرياضية بنين'];
     const sections = ['الكل', 'بنين', 'بنات'];
     const stages = ['الكل', 'رياض أطفال', 'طفولة مبكرة', 'ابتدائي', 'متوسط', 'ثانوي', 'إشراف تعليمي', 'إدارة عامة'];
@@ -25,27 +24,28 @@ const ReportsPage = () => {
     useEffect(() => {
         const fetchAllBookings = async () => {
             const token = localStorage.getItem('token');
-            if (!token || localStorage.getItem('role') !== 'Admin') {
-                setError('غير مصرح لك. يجب أن تكون مسؤولاً.');
+            const role = localStorage.getItem('role');
+
+            if (!token || role !== 'Admin') {
+                setError('غير مصرح لك بالدخول. يجب تسجيل الدخول كمسؤول.');
                 setLoading(false);
                 return;
             }
 
             try {
-                // استخدام مسار تقارير المسؤول المحمي
                 const res = await axios.get(`${API_URL}/reports/all-bookings`, { 
-                    headers: {
-                        'x-auth-token': token,
-                    },
+                    headers: { 'x-auth-token': token },
                 });
                 
-                setBookings(res.data);
-                setFilteredBookings(res.data); // تعيين القائمة المصفاة في البداية
+                // التأكد من أن البيانات مصفوفة
+                const data = Array.isArray(res.data) ? res.data : [];
+                setBookings(data);
+                setFilteredBookings(data);
                 setLoading(false);
 
             } catch (err) {
-                console.error("Error fetching reports:", err.response);
-                setError(err.response?.status === 401 ? 'انتهت جلسة الدخول أو غير مصرح لك.' : 'فشل في جلب التقارير من الخادم.');
+                console.error("Fetch Error:", err);
+                setError('حدث خطأ أثناء جلب البيانات من السيرفر.');
                 setLoading(false);
             }
         };
@@ -53,98 +53,70 @@ const ReportsPage = () => {
         fetchAllBookings();
     }, []);
 
-    // دالة التصفية
     useEffect(() => {
         let currentFiltered = bookings;
-
-        if (filterFacility !== 'الكل') {
-            currentFiltered = currentFiltered.filter(b => b.facility === filterFacility);
-        }
-        if (filterSection !== 'الكل') {
-            currentFiltered = currentFiltered.filter(b => b.section === filterSection);
-        }
-        if (filterStage !== 'الكل') {
-            currentFiltered = currentFiltered.filter(b => b.stage === filterStage);
-        }
-        
+        if (filterFacility !== 'الكل') currentFiltered = currentFiltered.filter(b => b.facility === filterFacility);
+        if (filterSection !== 'الكل') currentFiltered = currentFiltered.filter(b => b.section === filterSection);
+        if (filterStage !== 'الكل') currentFiltered = currentFiltered.filter(b => b.stage === filterStage);
         setFilteredBookings(currentFiltered);
     }, [filterFacility, filterSection, filterStage, bookings]);
 
-    // حساب الملخصات الإحصائية
     const totalBookings = filteredBookings.length;
-    const internalBookings = filteredBookings.filter(b => b.bookingType === 'داخلي').length;
-    const externalBookings = totalBookings - internalBookings;
-    
-    // حساب إجمالي الساعات
-    const totalHours = filteredBookings.reduce((sum, booking) => sum + booking.duration, 0);
+    const totalHours = filteredBookings.reduce((sum, b) => sum + (Number(b.duration) || 0), 0);
 
+    if (error) return <Container className="mt-5"><Alert variant="danger">{error}</Alert></Container>;
 
-    if (error) {
-        return <Alert variant="danger" className="mt-5">{error}</Alert>;
-    }
-
-    if (loading) {
-        return <div className="text-center mt-5">يتم تحميل تقارير الحجوزات...</div>;
-    }
+    if (loading) return (
+        <Container className="text-center mt-5">
+            <Spinner animation="border" variant="primary" className="mb-2" />
+            <p>جاري تحميل تقارير مدارس الأندلس...</p>
+        </Container>
+    );
 
     return (
-        <Container className="mt-5">
-            <Card className="shadow-lg p-4">
-                <h2 className="text-center mb-4">تقارير المسؤول - كافة الحجوزات</h2>
+        <Container className="mt-4 mb-5">
+            <Card className="shadow-lg border-0 p-4 rounded-4">
+                <h2 className="text-center mb-4 fw-bold" style={{ color: '#00157c' }}>📋 تقارير المسؤول الشاملة</h2>
                 
-                {/* 1. ملخص سريع */}
-                <Card className="mb-4 p-3 bg-light">
+                <Card className="mb-4 p-3 bg-light border-0 rounded-3">
                     <Row className="text-center">
-                        <Col><h5>إجمالي الحجوزات: <Badge bg="primary">{totalBookings}</Badge></h5></Col>
-                        <Col><h5>ساعات الحجز الكلية: <Badge bg="info">{totalHours}</Badge></h5></Col>
-                        <Col><h5>داخلي: <Badge bg="success">{internalBookings}</Badge></h5></Col>
-                        <Col><h5>خارجي: <Badge bg="warning">{externalBookings}</Badge></h5></Col>
+                        <Col md={6}><h5>إجمالي الحجوزات: <Badge bg="primary">{totalBookings}</Badge></h5></Col>
+                        <Col md={6}><h5>ساعات التشغيل: <Badge bg="info">{totalHours}</Badge></h5></Col>
                     </Row>
                 </Card>
 
-                {/* 2. خيارات التصفية */}
-                <Form className="mb-4">
+                <Form className="mb-4 p-3 border rounded-3 bg-white">
                     <Row>
-                        <Col md={4}>
-                            <Form.Group controlId="filterFacility">
-                                <Form.Label>تصفية حسب المرفق</Form.Label>
-                                <Form.Select value={filterFacility} onChange={(e) => setFilterFacility(e.target.value)}>
-                                    {facilities.map(f => <option key={f} value={f}>{f}</option>)}
-                                </Form.Select>
-                            </Form.Group>
+                        <Col md={4} className="mb-2">
+                            <Form.Label className="fw-bold">المرفق</Form.Label>
+                            <Form.Select value={filterFacility} onChange={(e) => setFilterFacility(e.target.value)}>
+                                {facilities.map(f => <option key={f} value={f}>{f}</option>)}
+                            </Form.Select>
                         </Col>
-                        <Col md={4}>
-                            <Form.Group controlId="filterSection">
-                                <Form.Label>تصفية حسب القسم</Form.Label>
-                                <Form.Select value={filterSection} onChange={(e) => setFilterSection(e.target.value)}>
-                                    {sections.map(s => <option key={s} value={s}>{s}</option>)}
-                                </Form.Select>
-                            </Form.Group>
+                        <Col md={4} className="mb-2">
+                            <Form.Label className="fw-bold">القسم</Form.Label>
+                            <Form.Select value={filterSection} onChange={(e) => setFilterSection(e.target.value)}>
+                                {sections.map(s => <option key={s} value={s}>{s}</option>)}
+                            </Form.Select>
                         </Col>
-                         <Col md={4}>
-                            <Form.Group controlId="filterStage">
-                                <Form.Label>تصفية حسب المرحلة</Form.Label>
-                                <Form.Select value={filterStage} onChange={(e) => setFilterStage(e.target.value)}>
-                                    {stages.map(s => <option key={s} value={s}>{s}</option>)}
-                                </Form.Select>
-                            </Form.Group>
+                        <Col md={4} className="mb-2">
+                            <Form.Label className="fw-bold">المرحلة</Form.Label>
+                            <Form.Select value={filterStage} onChange={(e) => setFilterStage(e.target.value)}>
+                                {stages.map(s => <option key={s} value={s}>{s}</option>)}
+                            </Form.Select>
                         </Col>
                     </Row>
                 </Form>
 
-                {/* 3. جدول البيانات */}
-                <div style={{ overflowX: 'auto' }}>
-                    <Table striped bordered hover responsive size="sm">
-                        <thead>
+                <div className="table-responsive">
+                    <Table hover className="align-middle text-center border shadow-sm">
+                        <thead style={{ backgroundColor: '#00157c', color: 'white' }}>
                             <tr>
                                 <th>#</th>
-                                <th>اسم النشاط</th>
-                                <th>التاريخ والوقت</th>
-                                <th>المدة (ساعة)</th>
+                                <th>النشاط</th>
+                                <th>التاريخ</th>
                                 <th>المرفق</th>
-                                <th>القسم</th>
                                 <th>المرحلة</th>
-                                <th>النوع</th>
                                 <th>طالب الحجز</th>
                             </tr>
                         </thead>
@@ -153,24 +125,20 @@ const ReportsPage = () => {
                                 filteredBookings.map((booking, index) => (
                                     <tr key={booking._id}>
                                         <td>{index + 1}</td>
-                                        <td>{booking.activityName}</td>
+                                        <td className="fw-bold">{booking.activityName}</td>
                                         <td>{moment(booking.date).format('YYYY-MM-DD HH:mm')}</td>
-                                        <td>{booking.duration}</td>
-                                        <td>{booking.facility}</td>
-                                        <td>{booking.section}</td>
+                                        <td><Badge bg="secondary">{booking.facility}</Badge></td>
                                         <td>{booking.stage}</td>
                                         <td>
-                                            <Badge bg={booking.bookingType === 'داخلي' ? 'success' : 'warning'}>
-                                                {booking.bookingType}
-                                            </Badge>
+                                            {/* ✅ الحماية هنا: استخدام ? لمنع انهيار الصفحة إذا كانت البيانات ناقصة */}
+                                            <span className="text-primary fw-bold">
+                                                {booking.bookedBy?.username || 'مستخدم غير معروف'}
+                                            </span>
                                         </td>
-                                        <td>{booking.bookedBy.username} ({booking.bookedBy.role})</td>
                                     </tr>
                                 ))
                             ) : (
-                                <tr>
-                                    <td colSpan="9" className="text-center">لا توجد حجوزات مطابقة للمعايير المحددة.</td>
-                                </tr>
+                                <tr><td colSpan="6" className="py-4 text-muted">لا توجد سجلات مطابقة لهذه الفلترة.</td></tr>
                             )}
                         </tbody>
                     </Table>
